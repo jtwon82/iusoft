@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.scms.ClubMapper">
+	<select id="select" resultType="Club" parameterType="hashmap">
+		SELECT * FROM tb_club (nolock) WHERE cl_num = #{cl_num} 
+	</select>
+	
+	<select id="selectId" resultType="Club" parameterType="hashmap">
+		SELECT * FROM tb_club (nolock) WHERE cl_id = #{cl_id} 
+	</select>
+	
+	<select id="listAll" resultType="Club" parameterType="hashmap">
+		SELECT * FROM tb_club (nolock) WHERE cl_stat != 'N'
+	</select>
+	
+	<select id="listPaged" resultType="Club" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT cl_num, cl_name, cl_id, cl_wdate, cl_passwd, cl_stat, 
+			(	
+					select sum([win_cnt]) 
+					from tb_reserve_cnt TC
+					where  TC.cl_no=CL.cl_num and TC.rc_date >= #{befor1month} and #{after14days} > TC.rc_date
+			) as real_cnt,
+			(	
+						select count(*) 
+						from tb_reserve_time TRT,tb_reserve TR where TR.re_num=TRT.re_num and TR.cl_num=CL.cl_num and TR.re_date >= #{befor1month}
+			) as cnt,
+			ROW_NUMBER() OVER (ORDER BY cl_num DESC) AS rownum
+			FROM tb_club CL (nolock)
+			<include refid="listPagedWhere"/>
+		) AS NO
+		<include refid="listPagedWhere1"/>
+	</select>
+	
+	<select id="countPaged" resultType="int" parameterType="hashmap">
+		SELECT count(*) FROM tb_club (nolock)
+		<include refid="listPagedWhere"/>
+	</select>
+	
+	<sql id="listPagedWhere">
+		WHERE cl_stat != 'N'
+	</sql>
+	
+	<sql id="listPagedWhere1">
+		WHERE 1=1
+		<if test="_parameter.containsKey('firstOffset')">
+		AND NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		</if>
+	</sql>
+	
+	<insert id="insert" parameterType="Club">
+		INSERT INTO tb_club
+		(cl_name, cl_wdate, cl_id, cl_passwd, cl_stat)
+		VALUES (#{cl_name}, CONVERT(CHAR(8), getdate(), 112), #{cl_id}, #{cl_passwd}, #{cl_stat} )
+	</insert>
+	
+	<update id="update" parameterType="Club">
+		UPDATE tb_club SET
+			cl_name = #{cl_name} 
+			,cl_id = #{cl_id} 
+			,cl_passwd = #{cl_passwd} 
+			,cl_stat = #{cl_stat} 
+		WHERE cl_num = #{cl_num}
+	</update>
+	
+	<delete id="delete" parameterType="hashmap">
+		DELETE FROM tb_club WHERE cl_num = #{cl_num}
+	</delete>
+	
+</mapper>

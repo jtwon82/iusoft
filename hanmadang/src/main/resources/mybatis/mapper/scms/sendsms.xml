@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.scms.SMSMapper">
+	<insert id="insertSendSms" parameterType="hashmap">
+		INSERT INTO TB_SENDSMS(title,msg,result,pno,regidate) VALUES (#{title}, #{msg}, #{result}, #{pno}, getdate())
+	</insert>
+</mapper>

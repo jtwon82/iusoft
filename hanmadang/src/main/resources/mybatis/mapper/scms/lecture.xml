@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.scms.LectureMapper">
+	<select id="list" resultType="Program" parameterType="hashmap">
+		SELECT Detail_Code, Detail_Name
+         FROM TB_Code_D (nolock)
+        WHERE Common_Code = '03'
+          AND State       = '0'
+         AND Detail_Code IN (SELECT DISTINCT Event_Code FROM TB_PROGRAM (nolock) WHERE State = '0' AND Online_Yn = 'Y')
+	</select>
+	
+	<select id="listDetail" resultType="ProgramDetail" parameterType="hashmap">
+		 SELECT a.Program_Code,  
+	       a.Program_Name,  
+	       a.Event_Code,    
+	       a.SumUp_Code, 
+	       a.Sales_Code, 
+	       b.Month_Qty,  
+	       a.Start_Time,   
+	       a.End_Time, 
+	       b.Unit_Price, 
+	       c.Capacity, 
+	       a.Vat_Yn, 
+	       a.Qty,
+	       a.Use_Week
+	  FROM TB_PROGRAM a (nolock) LEFT OUTER JOIN 
+	       TB_COST b (nolock) ON A.Center_ID = B.Center_ID AND A.Program_Code = B.Program_Code LEFT OUTER JOIN 
+	       TB_CAPACITY c (nolock) ON a.Center_ID = c.Center_ID AND a.Program_Code = c.Program_Code AND c.State = '0'
+	       INNER JOIN 
+	       (SELECT Sales_Code, Event_Code, Sales_Item_Name
+	  			FROM TB_Saleitem
+	 			WHERE Center_ID      = '01'
+	   			AND State          = '0'
+	   			AND Sales_Division = '02'
+	   			AND Event_Code IN ( SELECT Detail_Code FROM TB_Code_D (nolock) WHERE Common_Code = '03' AND State = '0'
+	   									AND Detail_Code = #{detail_code})
+	       	) d on d.sales_code = a.sales_code AND d.event_code = a.event_code 
+	       
+	 WHERE a.Center_ID            = '01'
+	   AND a.Sales_Division       = '02'
+	   AND a.State               = '0'
+	   AND b.State               = '0' 
+	 ORDER BY a.event_code, a.Program_Name
+	</select>
+	
+	<select id="select" resultType="ProgramDetail" parameterType="hashmap">
+		SELECT a.Program_Code,  
+	       a.Program_Name,  
+	       a.Event_Code,    
+	       a.SumUp_Code, 
+	       a.Sales_Code, 
+	       b.Month_Qty,  
+	       a.Start_Time,   
+	       a.End_Time, 
+	       b.Unit_Price, 
+	       a.Vat_Yn, 
+	       a.Qty,
+	       a.Use_Week,
+	       a.Sales_Division
+	  FROM TB_PROGRAM a (nolock) LEFT OUTER JOIN 
+	       TB_COST b (nolock) ON A.Center_ID = B.Center_ID AND A.Program_Code = B.Program_Code  
+	 	WHERE A.Program_Code = #{program_code}
+	</select>
+	
+	<select id="selectReceiptSeq" resultType="int" parameterType="hashmap">
+		SELECT ISNULL(Max(Sequence), 0) as li_seq
+	    FROM TB_SEQUENCE WITH (UPDLOCK, HOLDLOCK)
+	   	WHERE Center_ID   = '01'
+	           AND Seq_Date    = #{seq_date}
+	           AND Table_Name  = 'TB_RECEIPT_M'
+	</select>
+	
+	<insert id="insertReceiptSeq" parameterType="hashmap">
+		INSERT INTO TB_SEQUENCE (Center_ID, Seq_Date, Table_Name, Sequence) 
+			VALUES('01', #{seq_date}, 'TB_RECEIPT_M', #{li_seq})
+	</insert>
+	
+	<update id="updateReceiptSeq" parameterType="hashmap">
+		UPDATE TB_SEQUENCE
+		      SET Sequence    = #{li_seq}
+		    WHERE Center_ID   = '01'
+		      AND Seq_Date    = #{seq_date}
+		      AND Table_Name  = 'TB_RECEIPT_M'
+	</update>
+	
+	<insert id="insertReceipt" parameterType="hashmap">
+		INSERT INTO TB_RECEIPT_M ( Center_ID, Trs_No, Sales_Date, Member_Code, Amount, User_ID, Close_Yn, State, Insert_Date, Insert_Man )
+			VALUES('01', #{trs_no}, #{sales_date}, #{member_code}, #{amount}, 'WEB', 'N', '0', getdate(), 'WEB') 
+	</insert>
+	
+	<insert id="insertReceiptDetail" parameterType="hashmap">
+		INSERT INTO TB_RECEIPT_D ( Center_ID, Trs_No, Trs_Seq, Discount_Code, Sales_Division, Event_Code, Sales_Code, Program_Code, Unit_Price, Qty,
+			           Discount_Amount, Payment_Method, Cash_Amount, Card_Amount, Sangpum_Amount, Receive_Amount, Sale_Amount, Vat_Amount, 
+				   Change_Yn, Refund_Yn, Receipt_Gubun, SumUp_Code, Mileage, State, Insert_Date, Insert_Man, 
+				   Print_Desc_1, Print_Desc_2, Start_Date, End_Date, Member_Code)
+			VALUES('01', #{order.trs_no}, 1, '0001', '02', #{program.event_code}, #{program.sales_code}, #{program.program_code}, #{program.unit_price}, 1, 
+				0, 2, 0, #{order.pay.salesPrice}, 0, #{order.pay.salesPrice}, #{order.pay.sales_amount}, #{order.pay.vat_amount},
+				'N', 'N', '02', '01', 0, '0', getdate(), 'WEB',
+				#{program.program_name}, #{program.program_time}, #{program.start_date}, #{program.end_date}, #{order.member_code}) 
+	</insert>
+	
+	<select id="selectTrainingReceiptSeq" resultType="int" parameterType="hashmap">
+		SELECT ISNULL(Max(Member_Seq), 0) as li_member_seq
+	  FROM TB_TRAINING_DETAILS (nolock)
+         WHERE Center_ID  = '01'
+	   AND Member_Code = #{member_code}
+	</select>
+	
+	<insert id="insertTrainingReceipt" parameterType="hashmap">
+		INSERT INTO TB_TRAINING_DETAILS ( Center_ID, Member_Code, Member_Seq, Sales_Date, Start_Date, End_Date, Last_End_Date, Unit_Price, Discount_Code, Payment_Method,
+                 	                  Cash_Amount, Card_Amount, Sangpum_Amount, Receive_Amount, Unpaid_Amount, Month_Qty, Qty, Sales_Division, Event_Code, Sales_Code,
+					  Program_Code,	Payment_Amount, Payment_Date, Deposit_Seq, Claim_Seq, Service_Day, State, Insert_Date, Insert_Man, Update_Date, Update_Man, Trs_No)
+		VALUES('01', #{order.member_code}, #{member_seq}, #{order.timestamp}, #{program.start_date}, #{program.end_date}, #{program.end_date}, #{program.unit_price}, '0001', '2',
+				0, #{order.pay.salesPrice}, 0, #{order.pay.salesPrice}, 0, #{program.month_qty}, #{program.qty}, #{program.sales_division}, #{program.event_code}, #{program.sales_code}, 
+				#{program.program_code}, #{order.pay.salesPrice}, #{order.timestamp}, 0, 0, 0, '0', getdate(), 'WEB', getdate(), 'WEB', #{order.trs_no})
+	</insert>
+	
+	<insert id="insertTrainingReceiptLink" parameterType="hashmap">
+		INSERT INTO TB_TRAINING_LINK ( Center_ID, Trs_No, Trs_Seq, Member_Code, Member_Seq, State, Insert_Date, Insert_Man, Update_Date, Update_Man)  
+		VALUES('01', #{order.trs_no}, 1, #{order.member_code}, #{member_seq}, '0', getdate(), 'WEB', getdate(), 'WEB')
+	</insert>
+	
+	<select id="selectCardReceiptSeq" resultType="int" parameterType="hashmap">
+		SELECT ISNULL(MAX(Sales_Seq), 0) as li_sales_seq
+	  FROM TB_CARD_APPROVAL (nolock)
+	 WHERE Center_ID = '01'
+	   AND Sales_Date = #{sales_date}
+	</select>
+	
+	<insert id="insertCardReceipt" parameterType="hashmap">
+		INSERT INTO TB_CARD_APPROVAL ( Center_ID, Sales_Date, Sales_Seq, Card_No, Card_Name, Installment, Approval_Amount, Process_Flag, Deal_Type,            
+				       Approval_Date, Approval_Time, Approval_No, Purchase_Code, Purchase_Name, Sale_Amount, Vat_Amount, Card_Affiliate, 
+				       Terminal_ID, Pos_No, Trs_No, Cancel_Yn, Response_Code, Notice, Manual_Yn, Edit_Yn, Insert_Date, Insert_Man, Deal_No)
+		VALUES('01', #{order.timestamp}, #{sales_seq}, #{order.pay.cardNum}, #{order.pay.cardName}, #{order.pay.installNo}, #{order.pay.salesPrice}, '2', 'D1',
+				#{order.pay.cardApproveDate}, #{order.pay.cardApproveTime}, #{order.pay.cardTradeNo}, '99', '온라인결제', 0, 0, '0',
+				'0', 0, #{order.trs_no}, 'N', '0000', #{order.pay.cardName}, 'N', 'N', getdate(), 'WEB', #{order.pay.oid})
+	</insert>
+	
+	<select id="listCardReceipt" resultType="CardReceipt" parameterType="hashmap">
+		SELECT b.Program_Name, a.Start_Date, a.Last_End_Date, a.Receive_Amount, d.Approval_No, d.Trs_No, d.sales_date, d.Approval_Date, d.Cancel_Yn, d.Deal_No, d.Deal_Type, d.purchase_code
+	  FROM TB_TRAINING_DETAILS a (nolock) INNER JOIN
+	       TB_PROGRAM b (nolock) ON a.Center_ID = b.Center_ID AND a.Program_Code = b.Program_Code INNER JOIN
+	       TB_TRAINING_LINK c (nolock) ON a.Center_ID = c.Center_ID AND a.Member_Code = c.Member_Code AND a.Member_Seq = c.Member_Seq LEFT OUTER JOIN
+	       TB_CARD_APPROVAL d (nolock) ON c.Center_ID = d.Center_ID AND c.Trs_No = d.Trs_No
+	WHERE a.Center_ID = '01'
+	  AND a.State = '0'
+	  AND a.Member_Code = #{member_code}
+	  ORDER BY d.sales_date desc
+	</select>
+	
+</mapper>

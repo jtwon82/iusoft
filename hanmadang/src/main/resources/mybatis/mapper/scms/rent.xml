@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.scms.RentMapper">
+	<select id="listBlock" resultType="OffDay" parameterType="hashmap">
+		select * from tb_block 
+		where substring(CONVERT(CHAR(8), bl_date, 112), 0, 7)  = #{year_month}
+		order by bl_date
+	</select>
+	
+	<insert id="insertBlock" parameterType="OffDay">
+		INSERT INTO tb_block (bl_name, bl_date) VALUES (#{bl_name}, #{bl_date})
+	</insert>
+	
+	<update id="updateBlock" parameterType="OffDay">
+		UPDATE tb_block SET
+			bl_name = #{bl_name}
+		WHERE bl_num = #{bl_num}
+	</update>
+	
+	<delete id="deleteBlock" parameterType="hashmap">
+		DELETE FROM tb_block WHERE bl_num = #{bl_num}
+	</delete>
+	
+	<select id="listRentCode" resultType="RentCode" parameterType="hashmap">
+		SELECT Detail_Code, Detail_Name
+	    FROM TB_Code_D (nolock)
+	    WHERE Common_Code = '02' AND State = '0' AND ISNULL(Rent_Yn, 'N') = 'Y'
+	</select>
+	
+	<select id="listRentCount" resultType="RentCount" parameterType="hashmap">
+		SELECT TR.re_date, COUNT(TR.re_date) cnt
+  		FROM tb_reserve TR, tb_reserve_time TRT
+		WHERE TR.re_num = TRT.re_num 
+			AND TR.re_part = #{detail_code}
+			AND TRT.rt_stat='Y' 
+			AND substring(CONVERT(CHAR(8), TR.re_date, 112), 0, 7)  = #{year_month}
+			AND CONVERT(CHAR(8), DATEADD(dd, 30, getdate()), 112) >= TR.re_date
+ 		GROUP BY TR.re_date
+	</select>
+	
+	<select id="listReserve" resultType="RentReserve" parameterType="hashmap">
+		SELECT TR.re_name, TR.cl_num
+			, (SELECT cl_name from tb_club where cl_num=TR.cl_num) cl_name
+			, TR.re_date,TRT.rt_num, TRT.rt_stime,TRT.rt_etime,TRT.rt_court,TR.re_title, TR.re_yoil, TR.re_kind
+			,TR.re_code ,TR.re_partname , TR.re_tel
+  		FROM tb_reserve TR join tb_reserve_time TRT
+ 		on (TR.re_date = #{date} OR TR.re_yoil LIKE {fn CONCAT({fn CONCAT('%', #{re_yoil})}, '%')}) 
+ 			AND TR.re_num = TRT.re_num 
+ 			AND TR.re_part = #{detail_code}
+ 			AND TRT.rt_stat='Y'
+ 			and TRT.rt_num not in (select rt_num from tb_excep_reserve where excep_date = #{date})
+ 		left join POSCO_WEB.dbo.class_employee C on TR.re_code =c.em_no
+	</select>
+	
+	<select id="listEachReserve" resultType="RentReserve" parameterType="hashmap">
+		SELECT TR.re_name, TR.cl_num, 
+			(SELECT cl_name from tb_club where cl_num=TR.cl_num) cl_name,
+			TR.re_date,TRT.rt_num,TRT.rt_stime,TRT.rt_etime,TRT.rt_court, TRT.rt_court_cnt, TRT.rt_num, TRT.rt_stat, TR.re_title, TR.re_yoil, TR.re_kind, TR.re_part
+  		FROM tb_reserve TR, tb_reserve_time TRT
+ 		WHERE TR.re_date >= convert(varchar, getdate(), 112)
+ 			AND TR.re_num = TRT.re_num 
+ 			<if test="_parameter.containsKey('cl_num') and cl_num != null">
+ 			AND TR.cl_num = #{cl_num}
+ 			</if>
+ 			<if test="_parameter.containsKey('re_code') and re_code != null">
+ 			AND TR.re_code = #{re_code}
+ 			</if>
+	</select>
+	
+	<update id="updateTimeStat" parameterType="hashmap">
+		UPDATE tb_reserve_time SET
+			rt_stat = #{rt_stat} 
+		WHERE rt_num = #{rt_num}
+	</update>
+	
+	<update id="updateStats" parameterType="hashmap">
+		UPDATE tb_reserve_time SET
+			rt_stat = #{rt_stat} 
+		WHERE rt_num in (
+		<foreach collection="rt_nums" item="rt_num" separator=",">
+		 #{rt_num}
+		</foreach>
+		)
+	</update>
+	
+	<insert id="insertReserve" parameterType="RentReserve"  useGeneratedKeys="true" keyProperty="re_num">
+		INSERT INTO tb_reserve
+		(cl_num, re_name, re_code, re_date, re_part, re_wdate, re_tel, re_title, re_yoil, re_passwd
+			, re_partname)
+		VALUES (#{cl_num}, #{re_name}, #{re_code}, #{re_date}, #{re_part}, #{re_wdate}, #{re_tel}, #{re_title}, #{re_yoil}, #{re_passwd}
+			, #{re_partname})
+	</insert>
+	
+	<insert id="insertReserveTime" parameterType="hashmap">
+		INSERT INTO tb_reserve_time
+		(re_num, rt_stime, rt_etime, rt_court, rt_court_cnt, rt_stat)
+		VALUES
+		<foreach collection="list" item="el" separator=",">
+		 (#{re_num}, #{el.rt_stime}, #{el.rt_etime}, #{el.rt_court}, #{el.rt_court_cnt}, #{el.rt_stat})
+		</foreach>
+	</insert>
+	
+	<select id="cntNormalReserve" resultType="int" parameterType="hashmap">
+		select 
+			count(*) cnt 
+		from 
+			tb_reserve TR
+			,tb_reserve_time TRT 
+		where 
+			TR.re_num=TRT.re_num 
+			and TR.re_part = #{part_cd}
+			and TR.re_date = #{ticket_date}
+			and TRT.rt_stime=#{stime}
+			and TRT.rt_etime=#{etime}
+			and TRT.rt_court LIKE {fn CONCAT({fn CONCAT('%', #{court})}, '%')}
+			and TRT.rt_stat = 'Y' 
+	</select>
+	
+	<select id="cntNormalReserve2" resultType="int" parameterType="hashmap">
+		select 
+			count(*) cnt 
+		from 
+			tb_reserve TR
+			,tb_reserve_time TRT 
+		where 
+			TR.re_num=TRT.re_num 
+			and TR.re_part = #{part_cd}
+			and TR.re_date = #{ticket_date}
+			and TRT.rt_stime=#{stime}
+			and TRT.rt_etime=#{etime}
+			and TRT.rt_court=#{court}
+			and TRT.rt_stat = 'Y' 
+	</select>
+	
+	<select id="listFixedClass" resultType="RentReserve" parameterType="hashmap">
+		SELECT   TR.re_num,TR.re_name, (select cl_name from tb_club where cl_num=TR.cl_num and cl_num > 0) cl_name,
+			  TR.re_date,TRT.rt_num,TRT.rt_stime,TRT.rt_etime,
+			   case TRT.rt_court
+					when 'A코트' then '11코트'
+					when 'B코트' then '12코트'
+			   ELSE TRT.rt_court end  AS rt_court,
+			  TR.re_title
+			  from tb_reserve TR, tb_reserve_time TRT
+			  where (TR.re_yoil LIKE {fn CONCAT({fn CONCAT('%', #{re_yoil})}, '%')}) and TR.re_num = TRT.re_num and TR.re_part = #{re_part} and TRT.rt_stat='Y'
+			  and TRT.rt_num not in (select rt_num from tb_excep_reserve where excep_date = #{ticket_date})
+	</select>
+	
+	<insert id="insertExptFixedClass" parameterType="hashmap">
+		insert into tb_excep_reserve (rt_num, excep_date) values (#{rt_num}, #{excep_date})
+	</insert>
+	
+	<select id="listCurState" resultType="RentReserve" parameterType="hashmap">
+		select 
+			R.re_num,R.re_name, R.cl_num, (SELECT cl_name from tb_club where cl_num=R.cl_num) cl_name, R.re_title, R.re_yoil, R.re_kind,
+			<!-- DATEADD(MILLISECOND, cast(R.re_wdate as bigint) * 1000  % 1000, DATEADD(SECOND, cast(R.re_wdate as bigint), '19700101')) re_wdate -->
+			R.re_wdate
+			,T.rt_stime,T.rt_etime,T.rt_court 
+			<!-- ,(select count(*) 
+				from tb_reserve R2, tb_reserve_time T2 
+				where R2.re_part=#{part_cd} and R2.re_num = T2.re_num and R2.re_date = #{nowdate} and T2.rt_stat='Y' ) courtCnt
+			,(select count(*) 
+				from tb_reserve R2, tb_reserve_time T2 
+				where R2.re_part=#{part_cd} and R2.re_num = T2.re_num and R2.re_date = #{nowdate} and T2.rt_stat='C' ) cancelCnt -->
+		from tb_reserve R, tb_reserve_time T 
+		where 
+			R.re_part=#{part_cd} 
+			and R.re_num = T.re_num 
+			and (R.re_yoil LIKE {fn CONCAT({fn CONCAT('%', #{re_yoil})}, '%')} OR R.re_date= #{nowdate})
+			and T.rt_stat='Y' 
+			and #{nowtime} >= T.rt_stime
+			and T.rt_etime > #{nowtime}
+			and T.rt_num not in (select rt_num from tb_excep_reserve where excep_date = #{nowdate})
+	</select>
+	
+	<select id="listDrawRent" resultType="RentReserve" parameterType="hashmap">
+		SELECT TR.re_name, TR.re_date,TRT.rt_stime,TRT.rt_etime,TRT.rt_court,TRT.rt_court_cnt
+			  from tb_reserve TR, tb_reserve_time TRT
+			  where TR.re_date = #{date} and TR.re_num = TRT.re_num and TR.re_part = #{part_cd} and TRT.rt_stat='N'
+	</select>
+	
+	<select id="listDetailDrawRent" resultType="RentReserve" parameterType="hashmap">
+		SELECT TRT.rt_stime, TRT.rt_etime, TRT.rt_court,TRT.rt_court_cnt, (select cl_name from tb_club where cl_num = TR.cl_num) cl_name,
+			(	
+					select sum([win_cnt]) 
+					from tb_reserve_cnt TC
+					where  TC.cl_no=TR.cl_num and TC.rc_date >= #{befor1month} and #{after14days} >= TC.rc_date
+			) as court_cnt
+		FROM tb_reserve TR, tb_reserve_time TRT
+		WHERE TR.re_num = TRT.re_num and TR.re_part = #{part_cd} and TRT.rt_stat!='C' and TR.re_date = #{date} and rt_court_cnt > 0 and TRT.rt_stime = #{stime};
+	</select>
+	
+	<!-- 추첨이면 코트번호에 상관없이 중복 검사 -->
+	<select id="cntDrawReserve" resultType="int" parameterType="hashmap">
+		select 
+			count(*) cnt 
+		from 
+			tb_reserve TR
+			,tb_reserve_time TRT 
+		where 
+			TR.cl_num = #{cl_num}
+			and TR.re_num = TRT.re_num
+			and TR.re_date =#{ticket_date}
+			and TRT.rt_stime=#{stime}
+			and TRT.rt_etime=#{etime}
+			and TRT.rt_stat = 'N'
+	</select>
+	
+	<select id="cntEmployeeReserve" resultType="int" parameterType="hashmap">
+		select 
+			count(*) cnt 
+		from 
+			tb_reserve TR
+			,tb_reserve_time TRT 
+		where 
+			TR.re_num=TRT.re_num 
+			and TR.re_part = #{part_cd}
+			and TR.re_code = #{re_code}
+			and TR.re_date = #{ticket_date}
+			and TRT.rt_stat = 'Y'
+	</select>
+	
+	<select id="listReRentTime" resultType="RentReserve" parameterType="hashmap">
+		select R.re_date, T.rt_stime, T.rt_etime
+				from tb_reserve R, tb_reserve_time T 
+				where R.re_date = #{after14day} and R.re_num = T.re_num and T.rt_stat='N'  
+				group by R.re_date,T.rt_stime,T.rt_etime 
+				order by T.rt_stime
+	</select>
+	
+	<select id="listFixedReserve" resultType="RentReserve" parameterType="hashmap">
+		SELECT TR.re_name, TR.cl_num, 
+			(SELECT cl_name from tb_club where cl_num=TR.cl_num) cl_name,
+			TR.re_date,TRT.rt_stime,TRT.rt_etime,TRT.rt_court,TR.re_title, TR.re_yoil, TR.re_kind
+  		FROM tb_reserve TR, tb_reserve_time TRT
+ 		WHERE TR.re_num = TRT.re_num AND TR.re_part = #{detail_code}
+ 			AND TRT.rt_stat='Y'
+ 			AND 0 >= TR.cl_num
+ 			AND (TR.re_yoil LIKE {fn CONCAT({fn CONCAT('%', #{re_yoil})}, '%')} OR (TR.re_title is not null AND TR.re_title != '' AND TR.re_date = #{date}))
+ 			
+	</select>
+	
+	<select id="listExistReserve" resultType="RentReserve" parameterType="hashmap">
+		SELECT TR.re_name,
+			(select cl_name from tb_club where cl_num=TR.cl_num) cl_name,TR.re_date,TRT.rt_stime,TRT.rt_etime,TRT.rt_court,TRT.rt_court_cnt
+				  from tb_reserve TR, tb_reserve_time TRT
+				  where TR.re_date = #{date} 
+				  and TR.re_num = TRT.re_num 
+				  and TR.re_part =  #{detail_code} 
+				  and TRT.rt_stat='Y'  and (TRT.rt_stime=#{stime} or TRT.rt_etime=#{etime})
+	</select>
+	
+	<select id="cntTargetReserve" resultType="int" parameterType="hashmap">
+		select count(*) as cnt from tb_reserve where re_date=#{date}  and re_part=#{detail_code} and re_num in (
+					  select re_num from tb_reserve_time where rt_stime=#{stime} and rt_etime=#{etime} and rt_stat='N' 
+					  and re_num in ( select re_num from tb_reserve where re_date=#{date} and re_part=#{detail_code} and cl_num>0 )) 
+	</select>
+	
+	<select id="listDrawReserve" resultType="RentReserveCnt" parameterType="hashmap">
+		select d.* from 
+					(
+						select 
+								TR.cl_num
+								,(
+									select sum([win_cnt]) 
+									from tb_reserve_cnt TC
+									where  TC.cl_no=TR.cl_num and TC.rc_date >= #{one_month_ago} and #{date} > TC.rc_date
+								) usedcnt
+								,(
+									select TOP 1 T1.rt_court 
+									from tb_reserve R1,tb_reserve_time T1
+									where R1.cl_num=TR.cl_num and R1.re_part=#{detail_code} and R1.re_date = #{date} and R1.re_num=T1.re_num and T1.rt_stat='Y' and T1.rt_stime = #{befor_time}   
+									order by T1.rt_stime desc
+
+								) btdc
+								,TRT.rt_court_cnt
+								,TRT.rt_num
+								,ROUND( RAND( CAST( NEWID() AS varbinary ) ) * 100, 0 ) as RND 
+						from tb_reserve TR, tb_reserve_time TRT
+						where 
+							TR.re_date=#{date}
+							and TR.re_part=#{detail_code} 
+							and TR.re_num = TRT.re_num
+							and TRT.rt_stime=#{stime} 
+							and TRT.rt_etime=#{etime}
+							and TRT.rt_stat='N'
+							<choose>
+							<when test="_parameter.containsKey('success_list')">
+								and TR.cl_num not  in (
+								<foreach collection="success_list" item="el" separator=",">
+								 #{el}
+								</foreach>
+								)
+							</when>
+							<when test="_parameter.containsKey('not_today')">
+							and TR.cl_num not in ( select distinct  TC.cl_no from tb_reserve_cnt TC where TC.rc_date=#{date} )
+							</when>
+							<otherwise>
+								
+							</otherwise>
+							</choose>
+					) d
+					order by d.usedcnt asc, d.RND
+	</select>
+	
+	<!-- <select id="listRecomReserve" resultType="RentReserveCnt" parameterType="hashmap">
+		select d.* from 
+				(
+					select 
+							TR.cl_num
+							,(
+									select sum([win_cnt]) 
+									from tb_reserve_cnt TC
+									where  TC.cl_no=TR.cl_num and TC.rc_date >= #{one_month_ago} and #{date} > TC.rc_date
+							) usedcnt
+							,(
+								select TOP 1 T1.rt_court 
+								from tb_reserve R1,tb_reserve_time T1
+								where R1.cl_num=TR.cl_num and R1.re_part=#{detail_code} and R1.re_date = #{date} and R1.re_num=T1.re_num and T1.rt_stat='Y' and T1.rt_stime = #{befor_time}   
+								order by T1.rt_stime desc
+
+							) btdc
+							,TRT.rt_court_cnt
+							,TRT.rt_num
+							,ROUND( RAND( CAST( NEWID() AS varbinary ) ) * 100, 0 ) as RND 
+					from tb_reserve TR, tb_reserve_time TRT
+					where 
+						TR.re_date=#{date} 
+						and TR.re_part=#{detail_code} 
+						and TR.re_num = TRT.re_num
+						and TRT.rt_stime=#{stime}
+						and TRT.rt_etime=#{etime}
+						and TRT.rt_stat='N'
+						<if test="_parameter.containsKey('success_list') and success_list != null">
+						and TR.cl_num not  in (
+						<foreach collection="success_list" item="el" separator=",">
+						 #{el}
+						</foreach>
+						)
+						</if>
+				) d
+				order by d.usedcnt asc, d.RND
+	</select> -->
+	
+	<update id="updateDraw" parameterType="hashmap">
+		update tb_reserve_time set 
+			rt_stat='Y'
+			,rt_court=#{dang_court} 
+		where rt_num = #{vv};
+	</update>
+	
+	<insert id="insertDraw" parameterType="hashmap">
+		insert tb_reserve_cnt (rc_date ,cl_no ,win_cnt ,court_cnt,rt_stime) 
+		values ( #{ticket_date}, #{clnum}, 1, #{dang}, #{stime})
+	</insert>
+	
+	<update id="updateFailedDraw" parameterType="hashmap">
+		update tb_reserve_time set rt_stat='F' where rt_num IN (
+					select TRT.rt_num
+					from tb_reserve TR, tb_reserve_time TRT
+					where 
+						TR.re_date=#{date}
+						and TR.re_part=#{detail_code}
+						and TR.re_num = TRT.re_num
+						and TRT.rt_stime=#{stime}
+						and TRT.rt_etime=#{etime}
+						and TRT.rt_stat='N' 
+				)
+	</update>
+	
+	<!-- 통계 -->
+	<select id="listAllStats" resultType="RentState" parameterType="hashmap">
+		select R.re_date,
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num = 0 AND TRT.rt_stat = 'Y' AND (TR.re_yoil is null OR TR.re_yoil = '') AND TR.re_code is not null AND TR.re_code != '') employee_ok, 
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num = 0 AND TRT.rt_stat = 'C' AND (TR.re_yoil is null OR TR.re_yoil = '') AND TR.re_code is not null AND TR.re_code != '') employee_cancel,
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num = 0 AND TRT.rt_stat = 'Y' AND (TR.re_yoil is null OR TR.re_yoil = '') AND (TR.re_code is null OR TR.re_code = '') AND 
+			TR.re_title is not null AND TR.re_title != '') company_ok, 
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num = 0 AND TRT.rt_stat = 'C' AND (TR.re_yoil is null OR TR.re_yoil = '') AND (TR.re_code is null OR TR.re_code = '') AND 
+			TR.re_title is not null AND TR.re_title != '') company_cancel,
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'Y' AND TRT.rt_court_cnt = 0) team_ok, 
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'Y' AND TRT.rt_court_cnt > 0) team_draw_ok, 
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'C') team_cancel,
+			
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'F' AND TRT.rt_court_cnt > 0) team_fail
+		from tb_reserve R
+		where R.re_date >= #{sdate} AND #{edate} >= R.re_date group by R.re_date
+		ORDER by R.re_date ASC
+	</select>
+	
+	<select id="listTeamAllStats" resultType="RentState" parameterType="hashmap">
+		select R.re_date,
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'Y') team_ok, 
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'C') team_cancel,
+			(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+			where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'F') team_fail
+		from tb_reserve R
+		where R.re_date >= #{sdate} AND #{edate} >= R.re_date group by R.re_date
+	</select>
+	
+	<select id="listTeamTimeStats" resultType="RentState" parameterType="hashmap">
+		select R.re_date,
+		(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+		where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'Y' AND TRT.rt_stime = #{stime}) team_ok, 
+		(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+		where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'C' AND TRT.rt_stime = #{stime}) team_cancel,
+		(select count(*) from tb_reserve_time TRT,tb_reserve TR 
+		where TR.re_num=TRT.re_num AND TR.re_date=R.re_date AND TR.cl_num > 0 AND TRT.rt_stat = 'F' AND TRT.rt_stime = #{stime}) team_fail
+		from tb_reserve R
+		where R.re_date >= #{sdate} AND #{edate} >= R.re_date group by R.re_date
+	</select>
+	
+	<select id="listVaildTeamDate" resultType="RentState" parameterType="hashmap">
+		select R.re_date 
+		from tb_reserve R
+		where R.re_date >= #{sdate} AND #{edate} >= R.re_date group by R.re_date
+	</select>
+	
+	<select id="listStatsByTeam" resultType="RentState" parameterType="hashmap">
+		select
+		(select count(*) 
+		from tb_reserve tr, tb_reserve_time trt
+		where tr.re_num = trt.re_num and tc.cl_num = tr.cl_num AND trt.rt_stat = 'Y' and tr.re_date = #{date}) team_ok,
+		(select count(*) 
+		from tb_reserve tr, tb_reserve_time trt
+		where tr.re_num = trt.re_num and tc.cl_num = tr.cl_num AND trt.rt_stat = 'C' and tr.re_date = #{date}) team_cancel,
+		(select count(*) 
+		from tb_reserve tr, tb_reserve_time trt
+		where tr.re_num = trt.re_num and tc.cl_num = tr.cl_num AND trt.rt_stat = 'F' and tr.re_date = #{date}) team_fail,
+		tc.cl_name
+		from tb_club tc
+		where tc.cl_stat = 'Y'
+	</select>
+	
+</mapper>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.posco.AdminMapper">
+
+	<select id="select" resultType="Admin" parameterType="hashmap">
+		SELECT * FROM t_admin_user (nolock) WHERE id = #{id} and use_yn = 'Y'
+	</select>
+	
+	<select id="selectByIdx" resultType="Admin" parameterType="hashmap">
+		SELECT * FROM t_admin_user (nolock) WHERE idx = #{idx} and use_yn = 'Y'
+	</select>
+	
+	<select id="listPaged" resultType="Admin" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT idx, id, pwd, name, tel, phone, logidate, regidate, path_role, info,
+			ROW_NUMBER() OVER (ORDER BY idx DESC) AS rownum
+			FROM t_admin_user (nolock)
+			<include refid="listPagedWhere"/>
+		) AS NO
+		<include refid="listPagedWhere1"/>
+	</select>
+	
+	<select id="countPaged" resultType="int" parameterType="hashmap">
+		SELECT count(*) FROM t_admin_user (nolock)
+		<include refid="listPagedWhere"/>
+	</select>
+	
+	<sql id="listPagedWhere">
+		WHERE 1 = 1 and use_yn = 'Y'
+	</sql>
+	
+	<sql id="listPagedWhere1">
+		WHERE 1=1
+		<if test="_parameter.containsKey('firstOffset')">
+		AND NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		</if>
+	</sql>
+	
+	<insert id="insert" parameterType="Admin">
+		INSERT INTO t_admin_user
+		(id, pwd, name, tel, phone, path_role, info, last_pwd)
+		VALUES (#{id}, #{pwd}, #{name}, #{tel}, #{phone}, #{path_role}, #{info}, getdate())
+	</insert>
+	
+	<update id="update" parameterType="Admin">
+		UPDATE t_admin_user SET
+			id = #{id} 
+			<if test="pwd != null and pwd != ''">
+			,pwd = #{pwd} 
+			,miss_cnt = 0 
+			,last_pwd = getdate()
+			</if>
+			,name = #{name} 
+			,tel = #{tel} 
+			,phone = #{phone} 
+			,path_role = #{path_role} 
+			,info = #{info} 
+		WHERE idx = #{idx}
+	</update>
+	
+	<update id="updateLoginLog" parameterType="hashmap">
+		UPDATE t_admin_user SET
+			logidate = getdate()
+			,miss_cnt = 0 
+		WHERE idx = #{idx}
+	</update>
+	
+	<update id="updateMissCnt" parameterType="hashmap">
+		UPDATE t_admin_user SET
+			miss_cnt = miss_cnt + 1
+		WHERE idx = #{idx}
+	</update>
+	
+	<update id="delete" parameterType="hashmap">
+		<!-- DELETE FROM t_admin_user WHERE idx=#{idx} -->
+		UPDATE t_admin_user SET
+			use_yn = 'N'
+		WHERE idx = #{idx}
+	</update>
+	
+	<!-- log -->
+	<insert id="insertLog" parameterType="AdminLog">
+		INSERT INTO t_admin_log
+		(id, ip, name, type, action)
+		VALUES (#{id}, #{ip}, #{name}, 'admin', #{action})
+	</insert>
+	
+	
+	<select id="listLogPaged" resultType="AdminLog" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT *,
+			ROW_NUMBER() OVER (ORDER BY idx DESC) AS rownum
+			FROM t_admin_log (nolock)
+			<include refid="listLogPagedWhere"/>
+		) AS NO
+		<include refid="listLogPagedWhere1"/>
+	</select>
+	
+	<select id="countLogPaged" resultType="int" parameterType="hashmap">
+		SELECT count(*) FROM t_admin_log (nolock)
+		<include refid="listLogPagedWhere"/>
+	</select>
+	
+	<sql id="listLogPagedWhere">
+		WHERE 1 = 1
+	</sql>
+	
+	<sql id="listLogPagedWhere1">
+		WHERE 1=1
+		<if test="_parameter.containsKey('firstOffset')">
+		AND NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		</if>
+	</sql>
+	
+	<select id="listLogAll" resultType="AdminLog" parameterType="hashmap">
+		SELECT * FROM t_admin_log (nolock) WHERE CONVERT(CHAR(10), regidate, 23) > #{date} ORDER BY regidate DESC
+	</select>
+	
+</mapper>

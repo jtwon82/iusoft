@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.posco.ClassMapper">
+	<resultMap id="ClassUserDetailMap" type="ClassUser">
+        <id property="idx_no" column="idx_no" />
+        <result property="classInfo.b_cate_name" column="b_cate_name" />
+        <result property="classInfo.class_name" column="class_name" />
+        <result property="classInfo.class_time" column="class_time" />
+        <result property="classInfo.class_a_count" column="class_a_count" />
+        <result property="classInfo.class_b_count" column="class_b_count" />
+        <result property="classInfo.class_c_count" column="class_c_count" />
+        <result property="classInfo.cur_count" column="class_cur_count" />
+	</resultMap>
+	
+	<update id="updateHideAllClassDate">
+		UPDATE c_datesetting SET useyn = 'N'
+	</update>
+	
+	<insert id="insertClassDate" parameterType="hashmap">
+		INSERT INTO c_datesetting (startdate, enddate, regidate, useyn) 
+		VALUES (#{startdate}, #{enddate}, getdate(), 'Y')
+	</insert>
+	
+	<select id="selectActiveDate" resultType="ClassDate">
+		SELECT TOP 1 * FROM c_datesetting (nolock)
+		WHERE useyn='Y' ORDER BY idx_no DESC
+	</select>
+	
+	<select id="listClassDate" resultType="ClassDate">
+		Select * From C_DATESETTING (nolock) order by idx_no desc
+	</select>
+	
+	<select id="selectCateTop1" resultType="ClassInfo">
+		Select top 1 * From class_manager  order by b_cate desc
+	</select>
+	<select id="selectSubCateTop1" resultType="ClassInfo" parameterType="hashmap">
+		Select top 1 * From class_manager
+		Where b_cate = #{b_cate} and m_cate != '0' order by m_cate desc
+	</select>
+	
+	<select id="selectClass" resultType="ClassInfo">
+		SELECT * FROM class_manager (nolock)
+		WHERE idx_no = #{idx_no}
+	</select>
+	
+	<select id="listMainClass" resultType="ClassInfo">
+		SELECT * FROM class_manager (nolock)
+			WHERE m_cate='00' AND delyn='N' 
+			ORDER BY b_sort
+	</select>
+
+	<insert id="insertSubClass" parameterType="ClassInfo">
+		INSERT INTO class_manager
+		(b_cate, b_cate_name, m_cate, m_cate_name, class_name, class_time, class_a_count, class_c_count, class_standby_count, class_b_count, delyn, viewyn, regidate) 
+		VALUES (#{b_cate}, #{b_cate_name}, #{m_cate}, #{m_cate_name}, #{m_cate_name}, #{class_time},#{class_a_count}, #{class_c_count}, #{class_standby_count},#{class_b_count},'N', 'Y', getdate())
+	</insert>
+	
+	<insert id="insertMainClass" parameterType="ClassInfo">
+		INSERT INTO class_manager
+		(b_cate, b_cate_name, m_cate, m_cate_name, class_name, class_time, class_a_count, class_standby_count, class_b_count, delyn, b_sort, viewyn, regidate) 
+		VALUES (#{b_cate}, #{class_name},'00', #{class_name}, #{class_name},'',0,0,0,'N',#{b_sort}, 'Y', getdate())
+	</insert>
+	
+	<update id="updateMainClass" parameterType="ClassInfo">
+		UPDATE class_manager SET
+			b_cate_name = #{class_name} 
+			,m_cate_name = #{class_name} 
+			,class_name = #{class_name} 
+			,b_sort = #{b_sort} 
+		WHERE idx_no = #{idx_no}
+	</update>
+	
+	<update id="updateSubClass" parameterType="ClassInfo">
+		UPDATE class_manager SET
+			b_cate = #{b_cate} 
+			,b_cate_name = #{b_cate_name} 
+			,m_cate = #{m_cate} 
+			,m_cate_name = #{m_cate_name} 
+			,class_name = #{m_cate_name} 
+			,class_time = #{class_time} 
+			,class_a_count = #{class_a_count} 
+			,class_standby_count = #{class_standby_count} 
+			,class_b_count = #{class_b_count}
+			,class_c_count = #{class_c_count}
+		WHERE idx_no = #{idx_no}
+	</update>
+	
+	<update id="updateSubClassRate" parameterType="ClassInfo">
+		UPDATE class_manager SET
+			class_a_count = #{class_a_count} 
+			,class_b_count = #{class_b_count}
+			,class_c_count = #{class_c_count}
+			,class_man_per = #{class_man_per}
+			,class_women_per = #{class_women_per}
+		WHERE idx_no = #{idx_no}
+	</update>
+	
+	<update id="updateClassView" parameterType="hashmap">
+		UPDATE class_manager SET
+			viewyn = #{viewyn} 
+		WHERE idx_no = #{idx_no}
+	</update>
+	
+	<update id="deleteClass" parameterType="hashmap">
+		UPDATE class_manager SET delyn = 'Y' WHERE idx_no = #{idx_no}
+	</update>
+	
+	<select id="listActiveSubClass" resultType="ClassInfo" parameterType="hashmap">
+		Select cm2.*, (SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no) cur_count
+		FROM class_manager cm
+		INNER JOIN class_manager cm2 ON cm.b_cate = cm2.b_cate AND cm2.m_cate!='00' AND cm2.delyn='N'
+ 		WHERE cm.m_cate='00' AND cm.delyn='N' AND cm2.viewyn = 'Y'
+ 		<if test="_parameter.containsKey('keyword') and keyword != null and keyword != ''">
+ 		AND cm.b_cate IN(
+ 		<foreach collection="cates" item="el" separator=",">
+		 #{el}
+		</foreach>
+		)
+		AND (cm.b_cate_name LIKE {fn CONCAT({fn CONCAT('%', #{keyword})}, '%')} OR cm.class_name LIKE {fn CONCAT({fn CONCAT('%', #{keyword})}, '%')} )
+		</if>
+		
+ 		ORDER BY cm.b_sort, cm2.class_name
+	</select>
+
+	<select id="listAllSubClass" resultType="ClassInfo" parameterType="hashmap">
+		Select cm2.*,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '01') cnt_regular,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '02') cnt_associate,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '03') cnt_general
+		FROM class_manager cm
+		INNER JOIN class_manager cm2 ON cm.b_cate = cm2.b_cate AND cm2.m_cate!='00' AND cm2.delyn='N'
+ 		WHERE cm.m_cate='00' AND cm.delyn='N'
+ 		ORDER BY cm.b_sort, cm2.class_name
+	</select>
+	
+	<select id="selectAppliedUser" resultType="ClassUser" parameterType="hashmap">
+		SELECT *
+		FROM class_member_temp
+		WHERE class_year = #{class_year} AND class_month=#{class_month} 
+		<if test="_parameter.containsKey('hp') and hp != null"> <!-- 일반회원이 여러번 등록할경우  -->
+		AND hp=#{hp} 
+		</if>
+		<!-- 사원이 같은 이름으로 여러번 등록을 할때 체크 -->
+		<if test="_parameter.containsKey('o_name') and o_name != null and _parameter.containsKey('e_no') and e_no != null"> 
+		AND o_name=#{o_name}  AND e_no=#{e_no} 
+		</if>
+		
+		<if test="_parameter.containsKey('o_name') and o_name != null and _parameter.containsKey('mem_type') and mem_type != null"> 
+		AND o_name=#{o_name}  AND hp=#{hp} AND mem_type != #{mem_type}
+		</if>
+
+		<!-- 준회원 경우 휴대폰, 신청자명 중복 체크 -->
+		<if test="_parameter.containsKey('o_name') and o_name != null and _parameter.containsKey('hp') and hp != null and mem_type == null ">
+		AND em_type = '02' AND o_name=#{o_name} AND hp=#{hp}
+		</if>
+		
+		<if test="_parameter.containsKey('mem_type') and mem_type != null and _parameter.containsKey('e_no') and e_no != null">
+		AND mem_type=#{mem_type} AND e_no=#{e_no}
+		</if>
+	</select>
+	
+	<select id="listAppliedUser" resultMap="ClassUserDetailMap" parameterType="hashmap">
+		SELECT cmp.*, cm.b_cate_name, cm.class_name, cm.class_time, cm.class_a_count, cm.class_b_count, cm.class_c_count,
+				(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cmp.c_idx) class_cur_count
+		FROM class_member_temp cmp 
+		INNER JOIN class_manager cm ON cm.idx_no = cmp.c_idx
+		WHERE (cmp.hp = #{hp} OR cmp.tel = #{hp})<!--  AND cmp.pass = #{pass} -->
+		<if test="_parameter.containsKey('viewyn') and viewyn != null">
+		AND cmp.viewyn = #{viewyn}
+		</if>
+	</select>
+	
+	<insert id="insertAppliedUser" parameterType="ClassUser">
+		INSERT INTO class_member_temp(mem_type, o_name, e_name, e_no, partname, tel, hp, pass, 
+			class_year, class_month, class_yn, c_idx, em_type, rem_type, regidate, didx, gender) 
+		VALUES (#{mem_type}, #{o_name}, #{e_name}, #{e_no}, #{partname}, #{tel}, #{hp}, #{pass},
+			#{class_year}, #{class_month}, #{class_yn}, #{c_idx}, #{em_type}, #{rem_type}, getdate(), #{didx}, #{gender}) 
+	</insert>
+	
+	<delete id="deleteAppliedUser" parameterType="hashmap">
+		DELETE FROM class_member_temp WHERE idx_no = #{idx_no}
+	</delete>
+	
+	
+	<select id="listClassUser1" resultMap="ClassUserDetailMap" parameterType="hashmap">
+		SELECT a.*, b.b_cate_name, b.class_name, b.class_time, 
+			ROW_NUMBER() OVER (ORDER BY 
+			(select b_sort from posco_web.dbo.class_manager where b_cate = b.b_cate and m_cate = '00'), 
+			b.class_name, a.class_yn desc, a.em_type, a.o_name) AS rownum
+			, ROW_NUMBER() OVER (partition BY class_yn ORDER BY randomNo) rank
+			FROM class_member_temp a (nolock)
+			INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+			<include refid="listPagedWhere"/>
+		order by class_yn desc, b_cate_name, randomNo
+	</select>
+	
+	
+	<!-- 수강리스트, 추첨 선정 리스트 -->
+	<select id="listClassUser" resultMap="ClassUserDetailMap" parameterType="hashmap">
+		SELECT a.*, b.b_cate_name, b.class_name, b.class_time, 
+			<choose>
+			<when test="_parameter.containsKey('mode') and mode == 'class_ok'">
+			ROW_NUMBER() OVER (ORDER BY a.class_yn desc, b.b_cate, b.class_name, a.e_name) AS rownum
+			</when>
+			<otherwise>
+			ROW_NUMBER() OVER (ORDER BY a.idx_no DESC) AS rownum
+			</otherwise>
+			</choose>
+			FROM class_member_temp a (nolock)
+			INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+			<include refid="listPagedWhere"/>
+	</select>
+	
+	<select id="listClassPaged" resultMap="ClassUserDetailMap" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT a.*, b.b_cate_name, b.class_name, b.class_time
+			, ROW_NUMBER() OVER (partition BY class_yn ORDER BY randomNo) rank
+			, 
+			<choose>
+			<when test="_parameter.containsKey('mode') and mode == 'class_ok'">
+			ROW_NUMBER() OVER (ORDER BY a.class_yn desc, b.b_cate, b.class_name, a.e_name) AS rownum
+			</when>
+			<otherwise>
+			ROW_NUMBER() OVER (ORDER BY a.idx_no DESC) AS rownum
+			</otherwise>
+			</choose>
+			FROM class_member_temp a (nolock)
+			INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+			<include refid="listPagedWhere"/>
+		) AS NO
+		<include refid="listPagedWhere1"/>
+	</select>
+	
+	<select id="countClassPaged" resultType="int" parameterType="hashmap">
+		SELECT count(*) 
+		FROM class_member_temp a (nolock)
+		INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+		<include refid="listPagedWhere"/>
+	</select>
+	
+	<sql id="listPagedWhere">
+		WHERE 1 = 1
+		<if test="_parameter.containsKey('mode')">
+			<choose>
+			<when test="mode == 'class_none'">
+			AND a.class_yn != 'Y' AND a.class_yn != 'D'
+			</when>
+			<when test="mode == 'class_ok'">
+			AND (a.class_yn = 'Y' OR a.class_yn = 'D')
+			</when>
+			</choose>
+		</if>
+		<if test="param.em_type != null and param.em_type != '' and param.em_type != '00'">
+			AND a.em_type = #{param.em_type}
+		</if>
+		<if test="param.class_yn != null and param.class_yn != '' and param.class_yn != 'YN'">
+			AND a.class_yn = #{param.class_yn}
+		</if>
+		<if test="param.b_cate != null and param.b_cate != '' and param.b_cate != '00'">
+			AND b.b_cate = #{param.b_cate}
+		</if>
+		<if test="param.op != null">
+			<choose>
+			<when test="param.op == 'all'">
+			AND (a.e_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')} OR
+					a.o_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')} OR
+					a.e_no LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')} OR
+					b.class_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')})
+			</when>
+			<when test="param.op == 'e_name'">
+			AND a.e_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			<when test="param.op == 'o_name'">
+			AND a.o_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			<when test="param.op == 'e_no'">
+			AND a.e_no LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			<when test="param.op == 'class_name'">
+			AND b.class_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			</choose>
+		</if>
+		
+	</sql>
+	
+	<sql id="listPagedWhere1">
+		WHERE 1=1
+		<if test="_parameter.containsKey('firstOffset')">
+		AND NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		</if>
+	</sql>
+	
+	<update id="updateVip" parameterType="hashmap">
+		UPDATE class_member_temp SET
+			class_ok = #{class_ok} 
+<!-- 			,class_yn = #{class_ok}  -->
+		<if test="_parameter.containsKey('name')">
+		WHERE o_name = #{name} 
+		<if test="em_name != null and em_name != ''">
+			AND e_name = #{em_name} 
+		</if>
+		AND hp = #{phone} AND em_type = #{em_type}
+		</if>
+	</update>
+	
+	<update id="updateDrawStatus" parameterType="hashmap">
+		UPDATE class_member_temp SET class_yn = #{class_yn}
+		WHERE idx_no IN (
+		<foreach collection="list" item="el" separator=",">
+		 #{el}
+		</foreach>
+		)
+	</update>
+	
+	<!-- <select id="listDrawFactor" resultType="ClassDrawFactor">
+		Select cd.*, cm2.b_cate_name as name, cm2.class_name as class_name, cm2.idx_no
+		FROM class_manager cm
+		INNER JOIN class_manager cm2 ON cm.b_cate = cm2.b_cate AND cm2.m_cate!='00' AND cm2.delyn='N'
+		LEFT OUTER JOIN class_draw_factor cd ON cm2.idx_no = cd.class_no
+ 		WHERE cm.m_cate='00' AND cm.delyn='N'
+ 		ORDER BY cm.b_sort, cm2.class_name
+	</select> -->
+	
+	<!-- <insert id="insertDrawFactor" parameterType="ClassDrawFactor">
+		INSERT INTO class_draw_factor (class_no, regular, associate, general, man, women) 
+		VALUES (#{class_no}, #{regular}, #{associate}, #{general}, #{man}, #{women}) 
+	</insert> -->
+	
+	<!-- <insert id="updateDrawFactor" parameterType="ClassDrawFactor">
+		UPDATE class_draw_factor SET
+			regular = #{regular}
+			,associate = #{associate}
+			,general = #{general}
+			,man = #{man}
+			,women = #{women}
+		WHERE class_no = #{class_no}
+	</insert> -->
+	
+	<!-- 이전데이타 -->
+	
+	<select id="listBeforeClass" resultMap="ClassUserDetailMap" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT a.*, b.b_cate_name, b.class_name, b.class_time, 
+			ROW_NUMBER() OVER (ORDER BY a.idx_no DESC) AS rownum
+			FROM class_member a (nolock)
+			INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+			<include refid="listBeforePagedWhere"/>
+		) AS NO
+	</select>
+	
+	<select id="listBeforeClassPaged" resultMap="ClassUserDetailMap" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT a.*, b.b_cate_name, b.class_name, b.class_time, 
+			ROW_NUMBER() OVER (ORDER BY a.idx_no DESC) AS rownum
+			FROM class_member a (nolock)
+			INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+			<include refid="listBeforePagedWhere"/>
+		) AS NO
+		<include refid="listBeforePagedWhere1"/>
+	</select>
+	
+	<select id="countBeforeClassPaged" resultType="int" parameterType="hashmap">
+		SELECT count(*) 
+		FROM class_member a (nolock)
+		INNER JOIN class_manager b (nolock) ON a.c_idx = b.idx_no
+		<include refid="listBeforePagedWhere"/>
+	</select>
+	
+	<sql id="listBeforePagedWhere">
+		WHERE 1 = 1
+		<if test="_parameter.containsKey('mode')">
+			<choose>
+			<when test="mode == 'class_none'">
+			AND a.class_yn != 'Y' AND a.class_yn != 'D'
+			</when>
+			<when test="mode == 'class_ok'">
+			AND (a.class_yn = 'Y' OR a.class_yn = 'D')
+			</when>
+			</choose>
+		</if>
+		<if test="param.em_type != null and param.em_type != '' and param.em_type != '00'">
+			AND a.em_type = #{param.em_type}
+		</if>
+		<if test="param.didx != 0">
+			AND a.didx = #{param.didx}
+		</if>
+		<if test="param.b_cate != null and param.b_cate != '' and param.b_cate != '00'">
+			AND b.b_cate = #{param.b_cate}
+		</if>
+		<if test="param.op != null">
+			<choose>
+			<when test="param.op == 'all'">
+			AND (a.e_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')} OR
+					a.o_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')} OR
+					a.e_no LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')} OR
+					b.class_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')})
+			</when>
+			<when test="param.op == 'e_name'">
+			AND a.e_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			<when test="param.op == 'o_name'">
+			AND a.o_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			<when test="param.op == 'e_no'">
+			AND a.e_no LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			<when test="param.op == 'class_name'">
+			AND b.class_name LIKE {fn CONCAT({fn CONCAT('%', #{param.keyword})}, '%')}
+			</when>
+			</choose>
+		</if>
+	</sql>
+	
+	<sql id="listBeforePagedWhere1">
+		WHERE 1=1
+		<if test="_parameter.containsKey('firstOffset')">
+		AND NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		</if>
+	</sql>
+	
+	<!-- 추첨관련 -->
+	<update id="updateDrawOpen">
+		UPDATE class_member_temp
+		SET viewyn='Y' <!-- WHERE class_yn='Y' or class_yn='D' -->
+	</update>
+	<update id="updateDrawDefault">
+		UPDATE class_member_temp
+		SET class_yn = 'N'
+		,class_ok = 'N'
+		,viewyn = 'N'
+	</update>
+	
+	<update id="updateDrawReset">
+		UPDATE class_member_temp
+		SET class_yn = 'N'
+		,viewyn = 'N'
+	</update>
+	
+	<insert id="insertCompletClass">
+		INSERT INTO class_member(mem_type, o_name, e_name, e_no, partname, tel, hp, pass, regidate, class_year, 
+						class_month, class_yn, class_ok, c_idx, em_type, rem_type, class_update, upday, viewyn, didx, gender) 
+			SELECT mem_type, o_name, e_name, e_no, partname, tel, hp, pass, regidate, class_year,
+						class_month, class_yn, class_ok, c_idx, em_type, rem_type, class_update, upday, viewyn, didx, gender 
+			FROM class_member_temp
+	</insert>
+	
+	<delete id="truncateTempClassMember">
+		<!-- truncate table class_member_temp -->
+		delete from class_member_temp
+	</delete>
+	
+	<update id="deleteTempClassMember">
+		UPDATE class_member_temp
+		SET viewyn = 'N'
+	</update>
+	
+	<delete id="deleteClassMember">
+		<!-- truncate table class_member_temp -->
+		delete from class_member
+	</delete>
+	
+	<select id="cntPreDrawEnd" resultType="int" parameterType="hashmap">
+		select count(idx_no) From Class_member_temp where class_yn='Y'
+	</select>
+	<select id="cntDrawView" resultType="int" parameterType="hashmap">
+		select count(idx_no) From Class_member_temp where  viewyn='Y'
+	</select>
+	
+	<select id="listDrawFactorDetail" resultType="ClassDrawFactor">
+		Select cm2.*, cm2.class_man_per as man, cm2.class_women_per as women,
+		(cm2.class_a_count + cm2.class_b_count + cm2.class_c_count) as total,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '01') regular_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '02') associate_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '03') general_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '01' AND gender = 0) regular_man_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '02' AND gender = 0) associate_man_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '03' AND gender = 0) general_man_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '01' AND gender = 1) regular_women_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '02' AND gender = 1) associate_women_cnt,
+		(SELECT COUNT(*) FROM class_member_temp WHERE c_idx = cm2.idx_no AND em_type = '03' AND gender = 1) general_women_cnt
+		FROM class_manager cm
+		INNER JOIN class_manager cm2 ON cm.b_cate = cm2.b_cate AND cm2.m_cate!='00' AND cm2.delyn='N'
+<!-- 		LEFT OUTER JOIN class_draw_factor cd ON cm2.idx_no = cd.class_no -->
+ 		WHERE cm.m_cate='00' AND cm.delyn='N'
+ 		ORDER BY cm.b_sort, cm2.class_name
+	</select>
+	
+	<select id="listVipUser" resultType="ClassUser">
+		SELECT *
+		FROM class_member_temp a (nolock)
+		WHERE class_ok = 'Y'
+	</select>
+	
+	<update id="updateRandDrawStatus" parameterType="hashmap">
+		UPDATE class_member_temp
+		SET class_yn = 'Y'
+		WHERE c_idx = #{c_idx} 
+		<if test="_parameter.containsKey('list')">
+							AND (class_ok = 'Y' OR idx_no IN (
+															<foreach collection="list" item="el" separator=",">
+															 #{el.idx_no}
+															</foreach>
+															))	
+		</if>
+	</update>
+	
+	<select id="selectRandDrawStatus" parameterType="hashmap" resultType="ClassUser">
+		SELECT * FROM class_member_temp 
+		WHERE c_idx= #{c_idx} AND  class_ok != 'Y' AND class_yn != 'Y'
+		<if test="_parameter.containsKey('gender')">
+			AND gender = #{gender}
+		</if>
+		<if test="_parameter.containsKey('em_type')">
+			AND em_type = #{em_type}
+		</if>
+		ORDER BY NEWID()
+	</select>
+	
+	<update id="updateRandDrawWaitStatus" parameterType="hashmap">
+		UPDATE class_member_temp
+		SET class_yn = 'D', randomNo=cast(rand(convert(varbinary, newid()))*100 as int)+1
+		WHERE idx_no IN (
+		<foreach collection="list" item="el" separator=",">
+		 #{el.idx_no}
+		</foreach>
+		)	
+	</update>
+	
+	<select id="selectRandDrawWaitStatus" parameterType="hashmap" resultType="ClassUser">
+		SELECT * FROM class_member_temp 
+			WHERE c_idx= #{c_idx} AND  class_yn != 'Y'
+			ORDER BY NEWID()
+	</select>
+	
+	<select id="cntDrawResult" resultType="int">
+		SELECT count(*)
+		FROM class_member_temp a (nolock)
+		WHERE class_yn = 'Y' AND c_idx = #{c_idx}
+	</select>
+	
+	<!-- <update id="updatetemp1" parameterType="ClassInfo1">
+		UPDATE class_member_temp SET hp = #{ph}
+		WHERE o_name = #{o_name} and e_name=#{e_name} and e_no = #{e_no} and mem_type = #{mem_type} and gender = #{gender}
+	</update>
+	<update id="updatetemp2" parameterType="ClassInfo1">
+		UPDATE class_member_temp SET hp = #{ph}
+		WHERE o_name = #{o_name} and mem_type = #{mem_type} and hp == '01038248741' and gender = #{gender}
+	</update> -->
+	
+</mapper>

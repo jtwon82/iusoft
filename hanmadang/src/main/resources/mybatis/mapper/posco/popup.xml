@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.posco.PopupMapper">
+	<select id="select" resultType="Popup" parameterType="hashmap">
+		SELECT * FROM t_popup (nolock) WHERE idx_no = #{idx_no} 
+	</select>
+	
+	<select id="list" resultType="Popup" parameterType="hashmap">
+		SELECT * FROM t_popup (nolock)
+	</select>
+	
+	<select id="listActive" resultType="Popup" parameterType="hashmap">
+		SELECT * FROM t_popup (nolock)
+		WHERE  CONVERT(CHAR(10), getdate() , 101) >= b_start AND b_end >= CONVERT(CHAR(10), getdate() , 101)
+		AND b_open_yn = 'Y'
+	</select>
+	
+	<insert id="insert" parameterType="Popup">
+		INSERT INTO t_popup
+		(b_start, b_end, b_img, b_link)
+		VALUES (#{b_start}, #{b_end}, #{b_img}, #{b_link})
+	</insert>
+	
+	<update id="update" parameterType="Popup">
+		UPDATE t_popup SET
+			b_start = #{b_start} 
+			,b_end = #{b_end} 
+			,b_img = #{b_img} 
+			,b_link = #{b_link} 
+			,b_open_yn = #{b_open_yn} 
+		WHERE idx_no = #{idx_no}
+	</update>
+	
+	<update id="updateOnOff" parameterType="hashmap">
+		UPDATE t_popup SET
+			b_open_yn = #{b_open_yn} 
+		<if test="_parameter.containsKey('idx_no')">
+		WHERE idx_no = #{idx_no}
+		</if>
+	</update>
+	
+	<delete id="delete" parameterType="hashmap">
+		DELETE FROM t_popup WHERE idx_no=#{idx_no}
+	</delete>
+	
+</mapper>

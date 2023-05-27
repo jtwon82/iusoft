@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.posco.BannerMapper">
+	<select id="list" resultType="Banner" parameterType="hashmap">
+		SELECT * FROM t_banner (nolock) WHERE use_yn != 'N'
+	</select>
+	
+	<insert id="insert" parameterType="Banner" useGeneratedKeys="true" keyProperty="idx_no">
+		INSERT INTO t_banner
+		(b_name, b_img, b_link)
+		VALUES (#{b_name}, #{b_img}, #{b_link})
+	</insert>
+	
+	<update id="update" parameterType="Banner">
+		UPDATE t_banner SET
+			b_name = #{b_name} 
+			,b_img = #{b_img} 
+			,b_link = #{b_link} 
+		WHERE idx_no = #{idx_no}
+	</update>
+	
+	<delete id="delete" parameterType="hashmap">
+		DELETE FROM t_banner WHERE idx_no=#{idx_no}
+	</delete>
+	
+</mapper>

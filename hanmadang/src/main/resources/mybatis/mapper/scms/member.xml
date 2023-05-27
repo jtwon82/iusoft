@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.scms.MemberMapper">
+	<select id="select" resultType="Member" parameterType="hashmap">
+		SELECT * FROM tb_member (nolock) WHERE 1 = 1
+		<if test="_parameter.containsKey('member_id')">
+		AND member_id = #{member_id} 
+		</if>
+		<if test="_parameter.containsKey('name')">
+		AND member_name = #{name} AND REPLACE(cellular, '-', '') = #{hp}
+		</if>
+		
+	</select>
+	
+	<select id="selectIdPwd" resultType="Member" parameterType="hashmap">
+		SELECT * FROM tb_member (nolock) 
+		WHERE member_id = #{member_id} AND member_pw = dbo.EncryptSHA256(#{member_pw})
+	</select>
+	
+	<update id="updatePass" parameterType="Member">
+		UPDATE tb_member SET
+			member_pw = dbo.EncryptSHA256(#{member_pw})
+			,pw_last_dt = getdate()
+			,pw_miss_cnt = 0
+			,pw_miss_dt = getdate()
+		WHERE member_code = #{member_code}
+	</update>
+	
+	<update id="updatePassDt" parameterType="Member">
+		UPDATE tb_member SET
+			pw_last_dt = getdate()
+		WHERE member_code = #{member_code}
+	</update>
+	
+	<update id="updateLastLogin" parameterType="hashmap">
+		UPDATE tb_member SET
+			login_date = getdate()
+		WHERE member_code = #{member_code}
+	</update>
+	
+	<update id="updatePwdMissStatus" parameterType="hashmap">
+		UPDATE tb_member SET
+			pw_miss_cnt = #{pw_miss_cnt}
+			,pw_miss_dt = getdate()
+		WHERE member_code = #{member_code}
+	</update>
+	
+	<update id="updateLeave" parameterType="hashmap">
+		UPDATE TB_Member SET
+			Member_Name = '탈퇴자'
+			,Birth = '19100101'
+			,Telephone = ''
+			,Cellular = ''
+			,Post_No = ''
+			,Address = ''
+			,Address_Detail = ''
+			,Remark = '회원탈회'
+			,Member_ID = null
+			,Member_Pw = null
+			,State = '4'
+			,Update_Man = 'WEB'
+			,Update_Date = GetDate()
+		WHERE member_code = #{member_code}
+	</update>
+	
+	<delete id="deleteLeavePhoto" parameterType="hashmap">
+		DELETE TB_MEMBER_PHOTO
+		WHERE member_code = #{member_code}
+	</delete>
+	
+	<delete id="deleteLeaveCard" parameterType="hashmap">
+		DELETE TB_MEMBER_CARD
+		WHERE member_code = #{member_code}
+	</delete>
+	
+	<update id="updateSmsState" parameterType="hashmap">
+		UPDATE TB_Member SET SMS_Send = 'Y'
+		WHERE member_code IN(
+		<foreach collection="list" item="item" separator=",">
+		 #{item.member_code}
+		</foreach>
+		)
+	</update>
+	
+	<update id="updateState" parameterType="hashmap">
+		UPDATE TB_Member SET 
+			State = '0'
+       		,SMS_Send = 'N'
+       		,Update_Date = getdate()
+       		,Update_Man = 'WEB'
+		WHERE member_code = #{member_code}
+	</update>
+	
+	<select id="listDormant" resultType="Member">
+		SELECT *
+		FROM (
+			SELECT *,
+			ROW_NUMBER() OVER (ORDER BY Member_Code ASC) AS rownum
+			FROM TB_Member (nolock)
+			WHERE State = '9' AND ISNULL(SMS_Send, 'N') = 'N'
+		) AS NO
+		WHERE NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		<!-- SELECT *
+		FROM TB_Member
+		WHERE State = '9' AND ISNULL(SMS_Send, 'N') = 'N' -->
+	</select>
+	
+	<!-- <update id="updateDormantStatus" parameterType="hashmap">
+		UPDATE tb_member SET
+			dormant_yn = #{dormant_yn}
+			,dormant_dt = getdate()
+		<choose>
+		<when test="_parameter.containsKey('list')">
+			WHERE member_code IN(
+			<foreach collection="list" item="item" separator=",">
+			 #{item.member_code}
+			</foreach>
+			)
+		</when>
+		<otherwise>
+			WHERE member_code = #{member_code}
+		</otherwise>
+		</choose>
+	</update>
+	
+	<update id="updateSetDormant" parameterType="hashmap">
+		UPDATE tb_member SET
+			dormant_yn = 'Y'
+			,dormant_dt = getdate()
+		where member_code in 
+				(select member_code from scms_posco.dbo.tb_member 
+				where convert(varchar, dateadd(year, -1, getdate()), 102) > convert(varchar, login_date, 102) 
+					and dormant_yn != 'Y')	
+	</update>
+	
+	<select id="listDormant1Year" resultType="Member" parameterType="hashmap">
+		select * from tb_member 
+		where convert(varchar, dateadd(year, -1, getdate()), 102) > convert(varchar, login_date, 102)
+			and dormant_yn != 'Y'
+	</select>
+	
+	<select id="listDormant11Mon" resultType="Member" parameterType="hashmap">
+		select * from tb_member 
+		where convert(varchar, dateadd(month, -11, getdate()), 102) > convert(varchar, login_date, 102) 
+			and dormant_yn = 'N'
+	</select> -->
+	
+</mapper>

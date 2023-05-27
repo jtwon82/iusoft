@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.posco.NoticeMapper">
+	<select id="select" resultType="Notice" parameterType="hashmap">
+		SELECT *
+		FROM t_notice (nolock)
+		WHERE idx = #{idx}
+	</select>
+	
+	<select id="listPaged" resultType="Notice" parameterType="hashmap">
+		SELECT *
+		FROM (
+			SELECT idx, title, context, name, regidate, hit, imgfile,
+			datediff(dd, regidate, getdate()) reg_diff,
+			ROW_NUMBER() OVER (ORDER BY idx DESC) AS rownum
+			FROM t_notice (nolock)
+		) AS NO
+		<include refid="listPagedWhere1"/>
+	</select>
+	
+	<select id="countPaged" resultType="int" parameterType="hashmap">
+		SELECT count(*) FROM t_notice (nolock)
+		<!-- <include refid="listPagedWhere1"/> -->
+	</select>
+	
+	<sql id="listPagedWhere">
+		WHERE 1 = 1
+	</sql>
+	
+	<sql id="listPagedWhere1">
+		WHERE 1=1
+		<if test="_parameter.containsKey('firstOffset')">
+		AND NO.rownum BETWEEN #{firstOffset} AND #{lastOffset}
+		</if>
+	</sql>
+	
+	<insert id="insert" parameterType="Notice">
+		INSERT INTO t_notice
+		(title, context, name, regidate, hit, imgfile)
+		VALUES (#{title}, #{context}, #{name}, getdate(), 0, #{imgfile})
+	</insert>
+	
+	<update id="update" parameterType="Notice">
+		UPDATE t_notice SET
+			title = #{title} 
+			,context = #{context} 
+			,name = #{name} 
+			,imgfile = #{imgfile} 
+		WHERE idx = #{idx}
+	</update>
+	
+	<update id="updateHit"  parameterType="hashmap">
+		UPDATE t_notice SET
+			hit = hit + 1
+		WHERE idx = #{idx}
+	</update>
+	
+	<delete id="delete" parameterType="hashmap">
+		DELETE FROM t_notice WHERE idx=#{idx}
+	</delete>
+	
+</mapper>

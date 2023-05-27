@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.posco.hanmadang.mapper.posco.ProgramMapper">
+	<select id="select" resultType="ProgramTimeInfo" parameterType="hashmap">
+		SELECT * FROM t_program_gud (nolock) WHERE type = #{type}
+	</select>
+	
+	<insert id="insert" parameterType="ProgramTimeInfo">
+		MERGE INTO  t_program_gud AS A
+      	USING (SELECT #{type}) AS B(COL1) ON A.type = B.COL1
+		WHEN MATCHED THEN
+   			UPDATE SET
+				A.name = #{name} 
+				,A.content = #{content} 
+				,A.modidate = getdate() 
+		WHEN NOT MATCHED THEN
+   			INSERT (type, name, content, modidate, regidate)
+			VALUES (#{type}, #{name}, #{content}, getdate(), getdate());
+	</insert>
+	
+	<insert id="insertOrerNo" parameterType="OrderNo">
+		MERGE INTO  CLASS_ORDER_NO AS A
+      	USING (SELECT #{member_code}) AS B(COL1) ON A.member_code = B.COL1
+		WHEN MATCHED THEN
+   			UPDATE SET
+				A.member_code = #{member_code} 
+				,A.program_code = #{program_code} 
+				,A.order_no = #{order_no} 
+				,A.server_yn = #{server_yn} 
+				,A.lastdate = getdate() 
+		WHEN NOT MATCHED THEN
+   			INSERT (member_code, program_code, order_no, server_yn, lastdate)
+			VALUES (#{member_code}, #{program_code}, #{order_no}, #{server_yn}, getdate());
+	</insert>
+	
+	<update id="updateOrderNo" parameterType="hashmap">
+		UPDATE CLASS_ORDER_NO SET 
+			server_yn    = #{server_yn}
+			,serverdate = getdate()
+		WHERE order_no   = #{order_no}
+	</update>
+	
+	<select id="selectOrderNo" resultType="OrderNo" parameterType="hashmap">
+		SELECT * FROM CLASS_ORDER_NO (nolock) WHERE order_no = #{order_no}
+	</select>
+	
+	<!-- <select id="selectOrderNo" resultType="OrderNo" parameterType="hashmap">
+		SELECT * FROM CLASS_ORDER_NO (nolock) WHERE member_code = #{member_code}
+	</select> -->
+	
+</mapper>
