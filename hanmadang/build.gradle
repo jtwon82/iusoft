@@ -27,7 +27,7 @@ sourceCompatibility = 1.8
 	}
 	
 sourceSets {
-	ext.profile = (!project.hasProperty('profile') || !profile) ? 'local' : profile
+	ext.profile = (!project.hasProperty('profile') || !profile) ? 'prod' : profile
 	println "current profile : [[ ${profile} ]]"
 	main {
 		java {
