@@ -57,6 +57,7 @@ public class Constant {
 	public enum UploadDirType{
 		images,
 		editor,
+		war
 	}
 	
 	public enum PushType{
