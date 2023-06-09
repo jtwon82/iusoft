@@ -91,25 +91,17 @@ public class WebController {
 		return "/cal1";
 	}
 
-	@RequestMapping(value="/helth", method= RequestMethod.GET)
-	@ResponseBody
-	public String info(Test param){
-		Map map = new HashMap<>();
-		map.put("test","test");
-		map.put("test2","test2");
-		map.put("param", param);
-		return new Gson().toJsonTree(map).toString();
+
+
+	@RequestMapping(value="/deploy", method= RequestMethod.GET)
+	public String deployGet(ModelMap model){
+		model.addAttribute("test","test String");
+		return "/deploy";
 	}
 
 	@RequestMapping(value="/deploy", method=RequestMethod.POST)
 	@ResponseBody
-	public String deploy(@RequestParam(value="war", required=false) MultipartFile war){
-		try{
-			String imgFile = fileUpload.uploadFile(war, Constant.UploadDirType.war);
-			return imgFile;
-		}catch(Exception e){
-			logger.error(e.getMessage());
-			return Constant.ServiceResult.FAIL.name();
-		}
+	public String deployPost(@RequestParam(value="war", required=false) MultipartFile war){
+		return fileUpload.uploadFile(war, Constant.UploadDirType.war);
 	}
 }

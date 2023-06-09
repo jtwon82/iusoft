@@ -48,14 +48,37 @@ public class FileUpload {
 	
 	public String uploadFile(MultipartFile file, UploadDirType type) {
 		if(type == Constant.UploadDirType.war){
-			return uploadWarFile(file, "");
+			Constant.ServiceResult result= uploadWarFile(file, "");
+			return Constant.getResultJson(result,"succ","");
 		}
 		else {
 			return uploadFile(file, type.name() + "/" + generateUploadDir());
 		}
 	}
-	private String uploadWarFile(MultipartFile file, String subDir) {
-		return null;
+	private Constant.ServiceResult uploadWarFile(MultipartFile file, String subDir) {
+
+		try {
+			if(file == null || file.isEmpty())
+				return Constant.ServiceResult.FAIL;
+
+			if(file.getOriginalFilename().toLowerCase().endsWith(".war")) {
+				int pos = file.getOriginalFilename().lastIndexOf( "." );
+				String ext = file.getOriginalFilename().substring( pos + 1 );
+
+				File newFile = new File(DEPLOY_DIRECTORY +"/"+ generateFilename()
+						+"_"+ file.getOriginalFilename() );
+
+				FileUtils.writeByteArrayToFile(newFile, file.getBytes());
+
+				return Constant.ServiceResult.SUCCESS;
+			}else{
+				return Constant.ServiceResult.FAIL;
+			}
+
+		} catch(Exception e) {
+			logger.error(this.getClass().getName(), e);
+			return Constant.ServiceResult.FAIL;
+		}
 	}
 
 	private String uploadFile(MultipartFile file, String subDir) {
