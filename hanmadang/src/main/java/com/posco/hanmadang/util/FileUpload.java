@@ -48,8 +48,7 @@ public class FileUpload {
 	
 	public String uploadFile(MultipartFile file, UploadDirType type) {
 		if(type == Constant.UploadDirType.war){
-			Constant.ServiceResult result= uploadWarFile(file, "");
-			return Constant.getResultJson(result,"succ","");
+			return Constant.getResultJson(uploadWarFile(file, ""),"succ","");
 		}
 		else {
 			return uploadFile(file, type.name() + "/" + generateUploadDir());
@@ -62,8 +61,6 @@ public class FileUpload {
 				return Constant.ServiceResult.FAIL;
 
 			if(file.getOriginalFilename().toLowerCase().endsWith(".war")) {
-				int pos = file.getOriginalFilename().lastIndexOf( "." );
-				String ext = file.getOriginalFilename().substring( pos + 1 );
 
 				File newFile = new File(DEPLOY_DIRECTORY +"/"+ generateFilename()
 						+"_"+ file.getOriginalFilename() );
