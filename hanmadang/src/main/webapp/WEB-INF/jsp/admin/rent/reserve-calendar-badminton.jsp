@@ -109,9 +109,12 @@
 																	<c:when test="${item2.re_type == 'team' }">
 																	<td><span class="select-basic select-general"><c:out value="${item2.cl_name }"/></span></td>
 																	</c:when>
+																	<c:when test="${item2.re_type == 'today' }">
+																	<td><span class="select-basic select-general"><c:out value="${item2.re_name }"/></span></td>
+																	</c:when>
 																	<c:when test="${item2.re_type == 'employee' }">
 																	<td><span class="select-basic select-general">
-																		<table width=100%>
+																		<table width='100%'>
 																		<tr><td>${item2.re_name }</td></tr>
 																		<tr><td>${item2.re_tel }</td></tr>
 																		<tr><td>${item2.re_partname}</td></tr>

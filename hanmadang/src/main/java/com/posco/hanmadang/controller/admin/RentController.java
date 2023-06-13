@@ -150,8 +150,8 @@ public class RentController extends CommonController{
 		model.addAttribute("dday", Util.getDDaysFromCurrent(date));
 		
 		
-//		int rentReserveType = RentDataUtil.checkReType(date);
-//		model.addAttribute("type", rentReserveType);
+		int rentReserveType = RentDataUtil.checkReType(date);
+		model.addAttribute("type", rentReserveType);
 		
 		String[] yoilstr = new String[]{"월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"}; 
 		model.addAttribute("yoil", yoilstr[Integer.parseInt(yoil) - 1]);

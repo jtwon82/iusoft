@@ -81,7 +81,7 @@ public class Util {
 		    Date to = myFormat.parse(endDate);
 		    Date from = myFormat.parse(myFormat.format(Calendar.getInstance().getTime()));
 		    long diff = from.getTime() - to.getTime();
-		    System.out.println ("Days: " + TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
+		    //System.out.println ("Days: " + TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
 		    
 		    return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
 		} catch (ParseException e) {
@@ -97,7 +97,7 @@ public class Util {
 		    Date to = myFormat.parse(endDate);
 		    Date from = myFormat.parse(myFormat.format(Calendar.getInstance().getTime()));
 		    long diff = from.getTime() - to.getTime();
-		    System.out.println ("hours: " + diff / (60 * 60 * 1000));
+		    //System.out.println ("hours: " + diff / (60 * 60 * 1000));
 		    
 		    return diff / (60 * 60 * 1000);
 		} catch (ParseException e) {
