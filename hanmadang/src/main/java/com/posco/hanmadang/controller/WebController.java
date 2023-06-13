@@ -93,15 +93,15 @@ public class WebController {
 
 
 
-	@RequestMapping(value="/deploy", method= RequestMethod.GET)
-	public String deployGet(ModelMap model){
-		model.addAttribute("test","test String");
-		return "/deploy";
-	}
-
-	@RequestMapping(value="/deploy", method=RequestMethod.POST)
-	@ResponseBody
-	public String deployPost(@RequestParam(value="war", required=false) MultipartFile war){
-		return fileUpload.uploadFile(war, Constant.UploadDirType.war);
-	}
+//	@RequestMapping(value="/deploy", method= RequestMethod.GET)
+//	public String deployGet(ModelMap model){
+//		model.addAttribute("test","test String");
+//		return "/deploy";
+//	}
+//
+//	@RequestMapping(value="/deploy", method=RequestMethod.POST)
+//	@ResponseBody
+//	public String deployPost(@RequestParam(value="war", required=false) MultipartFile war){
+//		return fileUpload.uploadFile(war, Constant.UploadDirType.war);
+//	}
 }

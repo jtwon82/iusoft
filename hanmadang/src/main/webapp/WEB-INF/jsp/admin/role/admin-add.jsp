@@ -272,7 +272,7 @@ $(function(){
 		if(confirm("삭제하시겠습니까?")){
 			var idx = $(this).data("idx");
 			$.ajax({
-			     url:'${ADMIN_PATH}${ADMIN_PATH}/role/delete',
+			     url:'${ADMIN_PATH}/role/delete',
 			  	data:"idx="+idx,
 			     type: 'POST',
 			     error: function(){

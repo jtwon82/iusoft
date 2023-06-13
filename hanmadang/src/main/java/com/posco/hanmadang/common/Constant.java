@@ -91,7 +91,8 @@ public class Constant {
 		team,
 		lecture,
 		company,
-		draw		// 동호회
+		draw,		// 동호회
+		today,
 	}
 	
 	public enum AdminPath{

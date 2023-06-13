@@ -77,7 +77,7 @@
 					<div class="calendar-info">원하는 예약(시간/코트)를 선택해 주십시오.<br><br>
 						<span style="text-align: right;float: left;">- 운영시간 : 평일 07:00~22:30 / 주말(공휴일) 07:00~21:30</span>
 					</div>
-					
+
 					<div class="calendar-body">
 						<div class="calendar-week">
 							<div class="table-basic table-basic-type3"  style="width:1100px">
@@ -104,6 +104,7 @@
 									<c:forEach items="${data }" var="item" varStatus="status">
 										<tr>	
 											<td><c:out value="${item.key }"/></td>
+
 											<c:choose>
 											<c:when test="${fn:contains(item.key, '18:00 ~') }">
 											<td colspan="12"><span class="select-basic select-break">크리닝 타임</span></td>
@@ -129,6 +130,9 @@
 																	<td><span class="select-basic select-general"><c:out value="${fn:length(item2.cl_name) > 5 ? fn:substring(item2.cl_name, 0, 5) : item2.cl_name}"/></span></td>
 																	</c:when>
 																	<c:when test="${item2.re_type == 'employee' }">
+																	<td><span class="select-basic select-general"><c:out value="${item2.re_name }"/></span></td>
+																	</c:when>
+																	<c:when test="${item2.re_type == 'today' }">
 																	<td><span class="select-basic select-general"><c:out value="${item2.re_name }"/></span></td>
 																	</c:when>
 																	<c:otherwise>
@@ -157,9 +161,11 @@
 															<c:when test="${type == 2 and i > team_cort_size }">
 															<td><button data-value="${item.key }|${str_i}#" class="select-basic select-team">동호회</button></td>
 															</c:when>
+
 															<c:otherwise>
 															<td></td>
 															</c:otherwise>
+
 															</c:choose>
 															</c:if>
 													</c:forEach>
