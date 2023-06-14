@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import com.posco.hanmadang.common.Constant.RentReserveType;
@@ -14,6 +16,8 @@ import com.posco.hanmadang.model.KeyValueObject;
 import com.posco.hanmadang.model.RentReserve;
 
 public class RentDataUtil {
+	public static Logger logger = LoggerFactory.getLogger(RentDataUtil.class);
+
 	public static int checkReType(String checkDate){
 		int iCheckDate = Integer.parseInt(checkDate);
 		
@@ -128,6 +132,8 @@ public class RentDataUtil {
 					re.setRe_type(RentReserveType.company.name());
 				else if(re.getCl_num() > 0)
 					re.setRe_type(RentReserveType.team.name());
+				else if(re.getCl_num() < 0)
+					re.setRe_type(RentReserveType.today.name());
 				else
 					re.setRe_type(RentReserveType.employee.name());
 				

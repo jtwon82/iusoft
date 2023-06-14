@@ -41,7 +41,7 @@
  		GROUP BY TR.re_date
 	</select>
 	
-	<select id="listReserve" resultType="RentReserve" parameterType="hashmap">
+	<select id="listReserve_XXX" resultType="RentReserve" parameterType="hashmap">
 		SELECT TR.re_name, TR.cl_num
 			, (SELECT cl_name from tb_club where cl_num=TR.cl_num) cl_name
 			, TR.re_date,TRT.rt_num, TRT.rt_stime,TRT.rt_etime,TRT.rt_court,TR.re_title, TR.re_yoil, TR.re_kind
@@ -53,6 +53,33 @@
  			AND TRT.rt_stat='Y'
  			and TRT.rt_num not in (select rt_num from tb_excep_reserve where excep_date = #{date})
  		left join POSCO_WEB.dbo.class_employee C on TR.re_code =c.em_no
+	</select>
+	<select id="listReserve" resultType="RentReserve" parameterType="hashmap">
+		select max(re_name)re_name, max(cl_num)cl_num, max(cl_name)cl_name, max(re_date)re_date, max(rt_num)rt_num
+		, rt_stime, max(rt_etime)rt_etime, rt_court, max(re_title)re_title, max(re_yoil)re_yoil, max(re_kind)re_kind, max(re_code)re_code, max(re_partname)re_partname, max(re_tel)re_tel
+		from (
+			SELECT 1 gb, TR.re_name, TR.cl_num
+				, (SELECT cl_name from tb_club where cl_num=TR.cl_num) cl_name, TR.re_date,TRT.rt_num, TRT.rt_stime,TRT.rt_etime,TRT.rt_court
+				, TR.re_title, TR.re_yoil, TR.re_kind,TR.re_code ,TR.re_partname , TR.re_tel
+			FROM scms_posco.dbo.tb_reserve TR join scms_posco.dbo.tb_reserve_time TRT
+			on (TR.re_date = #{date} OR TR.re_yoil LIKE {fn CONCAT({fn CONCAT('%', #{re_yoil})}, '%')})
+			AND TR.re_num = TRT.re_num
+			AND TR.re_part = #{detail_code}
+			AND TRT.rt_stat='Y'
+			and TRT.rt_num not in (select rt_num from scms_posco.dbo.tb_excep_reserve where excep_date = #{date})
+			left join POSCO_WEB.dbo.class_employee C on TR.re_code =c.em_no
+			union
+			select 2 gb, ' 일일이용're_name, -1 cl_num, '' cl_name, #{date} rt_date, 0 rt_num, a.TIme_Code rt_stime, right('000'+cast(a.TIme_Code+100 as varchar),4) rt_etime, concat(court_no,'코트')rt_court
+				, ''re_title, ''re_yoil, ''re_kind, ''re_code, ''re_partname, ''re_tel
+			FROM scms_posco.dbo.TB_Rent_Time a (nolock) left outer join
+			(SELECT Court_No, Time_Code FROM scms_posco.dbo.TB_Daily_Rent (nolock)
+				WHERE Sales_Date = #{date} AND State = '0') b
+			ON a.Time_Code = b.Time_Code
+			where Court_No is not null
+			group by a.TIme_Code ,court_no
+		) a
+		group by rt_stime, rt_court
+		order by rt_stime
 	</select>
 	
 	<select id="listEachReserve" resultType="RentReserve" parameterType="hashmap">

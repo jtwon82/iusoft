@@ -132,3 +132,4 @@ src-gitfirst/
 .gradle/
 .DS_Store
 .idea/
+out/

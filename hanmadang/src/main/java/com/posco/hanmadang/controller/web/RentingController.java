@@ -241,6 +241,7 @@ public class RentingController extends CommonController{
 		String yoil = Util.getYoil(date);
 		
 		List<RentReserve> list = rentService.getReserve(code, yoil, date);	// 15 4 20200319
+		logger.info("list {}", list.toString());
 		model.addAttribute("list", list);
 		model.addAttribute("date", date);
 		model.addAttribute("dday", Util.getDDaysFromCurrent(date));

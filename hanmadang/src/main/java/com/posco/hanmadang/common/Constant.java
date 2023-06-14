@@ -19,7 +19,11 @@ public class Constant {
 	
 	
 	public static String ServiceResultJsonValue = "{\"result\" : \"%s\", \"value\" : \"%s\", \"value2\" : \"%s\"}";
-	
+
+	public static String getResultJson(ServiceResult serviceResult, String msg, String s){
+		return String.format(Constant.ServiceResultJsonValue, serviceResult, msg, "");
+	}
+
 	public enum ServiceResult {
         SUCCESS, 
         SUCCESS2,
@@ -57,6 +61,7 @@ public class Constant {
 	public enum UploadDirType{
 		images,
 		editor,
+		war
 	}
 	
 	public enum PushType{
@@ -86,7 +91,8 @@ public class Constant {
 		team,
 		lecture,
 		company,
-		draw		// 동호회
+		draw,		// 동호회
+		today,
 	}
 	
 	public enum AdminPath{

@@ -2,6 +2,7 @@ package com.posco.hanmadang.util;
 
 import java.io.File;
 
+import com.posco.hanmadang.common.Constant;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
@@ -15,6 +16,8 @@ import com.posco.hanmadang.common.Constant.UploadDirType;
 public class FileUpload {
 	@Value("${upload.file.dir}")
 	private String WEB_HOME_DIRECTORY;
+	@Value("${upload.file.deploy.dir}")
+	private String DEPLOY_DIRECTORY;
 	
 	private Logger logger = Logger.getLogger(getClass());
 
@@ -44,9 +47,37 @@ public class FileUpload {
 //	}
 	
 	public String uploadFile(MultipartFile file, UploadDirType type) {
-		return uploadFile(file, type.name() + "/" + generateUploadDir());
+		if(type == Constant.UploadDirType.war){
+			return Constant.getResultJson(uploadWarFile(file, ""),"succ","");
+		}
+		else {
+			return uploadFile(file, type.name() + "/" + generateUploadDir());
+		}
 	}
-	
+	private Constant.ServiceResult uploadWarFile(MultipartFile file, String subDir) {
+
+		try {
+			if(file == null || file.isEmpty())
+				return Constant.ServiceResult.FAIL;
+
+			if(file.getOriginalFilename().toLowerCase().endsWith(".war")) {
+
+				File newFile = new File(DEPLOY_DIRECTORY +"/"+ generateFilename()
+						+"_"+ file.getOriginalFilename() );
+
+				FileUtils.writeByteArrayToFile(newFile, file.getBytes());
+
+				return Constant.ServiceResult.SUCCESS;
+			}else{
+				return Constant.ServiceResult.FAIL;
+			}
+
+		} catch(Exception e) {
+			logger.error(this.getClass().getName(), e);
+			return Constant.ServiceResult.FAIL;
+		}
+	}
+
 	private String uploadFile(MultipartFile file, String subDir) {
 		
 		try {

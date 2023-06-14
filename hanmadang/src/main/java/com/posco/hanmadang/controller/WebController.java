@@ -1,26 +1,35 @@
 package com.posco.hanmadang.controller;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
-
 import com.google.gson.Gson;
+import com.posco.hanmadang.common.Constant;
+import com.posco.hanmadang.model.Banner;
+import com.posco.hanmadang.model.CalVO;
+import com.posco.hanmadang.model.Test;
+import com.posco.hanmadang.service.TestService;
+import com.posco.hanmadang.util.FileUpload;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.posco.hanmadang.model.CalVO;
-import com.posco.hanmadang.model.Test;
-import com.posco.hanmadang.service.TestService;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Controller
 public class WebController {
+	public Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	@Autowired
 	private TestService testService;
-	
+
+	@Autowired
+	private FileUpload fileUpload;
+
 	@RequestMapping("/")
 	public @ResponseBody String home(){
 		Test test = testService.find("test");
@@ -82,13 +91,17 @@ public class WebController {
 		return "/cal1";
 	}
 
-	@RequestMapping(value="/helth", method= RequestMethod.GET)
-	@ResponseBody
-	public String info(Test param){
-		Map map = new HashMap<>();
-		map.put("test","test");
-		map.put("test2","test2");
-		map.put("param", param);
-		return new Gson().toJsonTree(map).toString();
-	}
+
+
+//	@RequestMapping(value="/deploy", method= RequestMethod.GET)
+//	public String deployGet(ModelMap model){
+//		model.addAttribute("test","test String");
+//		return "/deploy";
+//	}
+//
+//	@RequestMapping(value="/deploy", method=RequestMethod.POST)
+//	@ResponseBody
+//	public String deployPost(@RequestParam(value="war", required=false) MultipartFile war){
+//		return fileUpload.uploadFile(war, Constant.UploadDirType.war);
+//	}
 }
