@@ -269,9 +269,8 @@ public class RentingController extends CommonController{
 		
 		String[] yoilstr = new String[]{"월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"}; 
 		model.addAttribute("yoil", yoilstr[Integer.parseInt(yoil) - 1]);
-		model.addAttribute("team_cort_size", HolidayUtil.isHoliday(date)? 4:6 ); // 휴일은 5~12코트 else 6~12코트
+		model.addAttribute("team_cort_size", 6); // HolidayUtil.isHoliday(date)? 4:6 ); // 휴일은 5~12코트 else 7~12코트
 		
-
 		logger.info("type={}, yoil={}, yoilstr[]={}", rentReserveType, yoil, yoilstr[Integer.parseInt(yoil) - 1]);
 		
 		if(code == RentingType.pingpong.getValue()){

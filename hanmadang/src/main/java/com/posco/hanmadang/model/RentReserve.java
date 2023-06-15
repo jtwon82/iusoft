@@ -5,7 +5,8 @@ import java.util.List;
 public class RentReserve extends Vo{
 	private long re_num;
 	private long rt_num;
-    private String re_name;
+	private String re_name;
+	private String re_nameMasking;
     private String re_partname;
     private int cl_num;
     private String cl_name;
@@ -37,7 +38,7 @@ public class RentReserve extends Vo{
     private List<RentReserveTime> reserveTimes;
     
     private boolean allCourt;
-	
+
 	public long getRe_num() {
 		return re_num;
 	}
@@ -224,5 +225,12 @@ public class RentReserve extends Vo{
 	public void setEm_no(String em_no) {
 		this.em_no = em_no;
 	}
-	
+
+	public String getRe_nameMasking() {
+		return re_nameMasking;
+	}
+
+	public void setRe_nameMasking(String re_nameMasking) {
+		this.re_nameMasking = re_nameMasking;
+	}
 }
