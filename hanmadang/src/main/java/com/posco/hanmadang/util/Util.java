@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
@@ -22,8 +24,44 @@ import org.springframework.util.StringUtils;
 public class Util {
 	public  static String getImageUrl(String path){
       return "/upload/" + path;
-    } 
-	
+    }
+
+	public static String nameMasking(String _name) {
+		try{
+			String name= _name;
+			// 한글만 (영어, 숫자 포함 이름은 제외)
+			String regex = "(^[가-힣]+)$";
+
+			Matcher matcher = Pattern.compile(regex).matcher(name);
+			if(matcher.find()) {
+				int length = name.length();
+
+				String middleMask = "";
+				if(length > 2) {
+					middleMask = name.substring(1, length - 1);
+				} else {	// 이름이 외자
+					middleMask = name.substring(1, length);
+				}
+
+				String dot = "";
+				for(int i = 0; i<middleMask.length(); i++) {
+					dot += "*";
+				}
+
+				if(length > 2) {
+					return name.substring(0, 1)
+							+ middleMask.replace(middleMask, dot)
+							+ name.substring(length-1, length);
+				} else { // 이름이 외자 마스킹 리턴
+					return name.substring(0, 1)
+							+ middleMask.replace(middleMask, dot);
+				}
+			}
+			return name;
+		}catch (Exception e){
+			return _name;
+		}
+	}
 	/**
      * 페이징에 사용할 url format
      *
@@ -81,7 +119,7 @@ public class Util {
 		    Date to = myFormat.parse(endDate);
 		    Date from = myFormat.parse(myFormat.format(Calendar.getInstance().getTime()));
 		    long diff = from.getTime() - to.getTime();
-		    System.out.println ("Days: " + TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
+		    //System.out.println ("Days: " + TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
 		    
 		    return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
 		} catch (ParseException e) {
@@ -97,7 +135,7 @@ public class Util {
 		    Date to = myFormat.parse(endDate);
 		    Date from = myFormat.parse(myFormat.format(Calendar.getInstance().getTime()));
 		    long diff = from.getTime() - to.getTime();
-		    System.out.println ("hours: " + diff / (60 * 60 * 1000));
+		    //System.out.println ("hours: " + diff / (60 * 60 * 1000));
 		    
 		    return diff / (60 * 60 * 1000);
 		} catch (ParseException e) {
