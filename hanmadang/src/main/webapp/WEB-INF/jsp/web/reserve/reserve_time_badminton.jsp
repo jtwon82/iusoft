@@ -130,7 +130,7 @@
 																	<td><span class="select-basic select-general"><c:out value="${fn:length(item2.cl_name) > 5 ? fn:substring(item2.cl_name, 0, 5) : item2.cl_name}"/></span></td>
 																	</c:when>
 																	<c:when test="${item2.re_type == 'employee' }">
-																	<td><span class="select-basic select-general"><c:out value="${item2.re_name }"/></span></td>
+																	<td><span class="select-basic select-general"><c:out value="${item2.re_nameMasking }"/></span></td>
 																	</c:when>
 																	<c:when test="${item2.re_type == 'today' }">
 																	<td><span class="select-basic select-general"><c:out value="${item2.re_name }"/></span></td>

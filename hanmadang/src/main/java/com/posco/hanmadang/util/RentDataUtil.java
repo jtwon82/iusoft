@@ -139,7 +139,7 @@ public class RentDataUtil {
 				
 				// 이름마스킹
 				if(re.getCl_num()==0){
-					re.setRe_name(Util.nameMasking((re.getRe_name())));
+					re.setRe_nameMasking(Util.nameMasking((re.getRe_name())));
 				}
 				if(Integer.parseInt(re.getRt_stime()) == sTime || Integer.parseInt(re.getRt_etime()) == eTime)
 					tmplist.add(re);
