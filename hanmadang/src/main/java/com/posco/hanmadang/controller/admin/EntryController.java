@@ -615,9 +615,9 @@ public class EntryController extends CommonController{
 				row.createCell(1).setCellValue(user.getClassInfo().getClass_name());
 				row.createCell(2).setCellValue(user.getClassInfo().getClass_time());
 				if("01".equals(user.getEm_type()))
-					row.createCell(3).setCellValue("포스코패밀리");
+					row.createCell(3).setCellValue("포스코패밀리(정)");
 				else if("02".equals(user.getEm_type()))
-					row.createCell(3).setCellValue("포스코패밀리");
+					row.createCell(3).setCellValue("포스코패밀리(준)");
 				else if("03".equals(user.getEm_type()))
 					row.createCell(3).setCellValue("일반회원");
 				
