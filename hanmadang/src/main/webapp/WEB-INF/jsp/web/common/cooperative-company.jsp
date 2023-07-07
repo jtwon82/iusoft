@@ -22,6 +22,7 @@
 <option value='포스코IH'>포스코IH</option>
 <option value='포스코MC머티리얼즈'>포스코MC머티리얼즈</option>
 <option value='포스코PH솔루션'>포스코PH솔루션</option>
+<option value='포스코PR테크'>포스코PR테크</option>
 <option value='포스코PS테크'>포스코PS테크</option>
 <option value='포스코경영연구원'>포스코경영연구원</option>
 <option value='포스코교육재단'>포스코교육재단</option>
